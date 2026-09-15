@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Under Maintenance – SCE Supaul Technical Club</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* Animated background */
+    .bg-animation {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 20% 50%, #1a0533 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, #001a4d 0%, transparent 60%),
+                  radial-gradient(ellipse at 50% 80%, #0d1a00 0%, transparent 60%),
+                  #0a0a0a;
+      z-index: 0;
+    }
+
+    /* Floating particles */
+    .particles {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0%   { transform: translateY(110vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.5; }
+      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+    }
+
+    /* Card */
+    .card {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 50px 40px;
+      max-width: 560px;
+      width: 90%;
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      box-shadow: 0 0 60px rgba(138,43,226,0.15), 0 30px 60px rgba(0,0,0,0.5);
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Gear icon animation */
+    .gear-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 30px;
+    }
+    .gear {
+      font-size: 3rem;
+      display: inline-block;
+      filter: drop-shadow(0 0 10px #f39c12);
+    }
+    .gear-big  { animation: spin 4s linear infinite; }
+    .gear-small { animation: spin 2s linear infinite reverse; font-size: 1.8rem; }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #f39c12, #e74c3c);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f39c12, #e74c3c, #9b59b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+
+    p.subtitle {
+      color: rgba(255,255,255,0.65);
+      font-size: 1rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      background: rgba(255,255,255,0.08);
+      border-radius: 50px;
+      height: 8px;
+      margin: 0 auto 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 70%;
+      background: linear-gradient(90deg, #f39c12, #e74c3c, #9b59b6);
+      border-radius: 50px;
+      animation: pulse-bar 2s ease-in-out infinite;
+    }
+    @keyframes pulse-bar {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.6; }
+    }
+    .progress-label {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 30px;
+    }
+
+    /* Info pills */
+    .pills {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .pill {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill span { font-size: 1rem; }
+
+    /* Footer */
+    .footer {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.3);
+    }
+    .footer strong {
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* Pulse dot */
+    .pulse-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: #f39c12;
+      border-radius: 50%;
+      margin-right: 5px;
+      animation: blink 1s infinite;
+      vertical-align: middle;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-animation"></div>
+
+  <!-- Floating particles -->
+  <div class="particles" id="particles"></div>
+
+  <div class="card">
+
+    <div class="gear-wrap">
+      <span class="gear gear-small">⚙️</span>
+      <span class="gear gear-big">⚙️</span>
+      <span class="gear gear-small">⚙️</span>
+    </div>
+
+    <div class="badge">🔧 Under Maintenance</div>
+
+    <h1>We'll Be Back Soon!</h1>
+
+    <p class="subtitle">
+      Our portal is currently undergoing scheduled maintenance to bring you a better experience.<br/>
+      <strong style="color:rgba(255,255,255,0.8);">SCE Supaul Technical Club</strong> appreciates your patience! 🚀
+    </p>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"></div>
+    </div>
+    <p class="progress-label"><span class="pulse-dot"></span> Maintenance in progress...</p>
+
+    <div class="pills">
+      <div class="pill"><span>🛠️</span> System Upgrade</div>
+      <div class="pill"><span>⚡</span> Performance Boost</div>
+      <div class="pill"><span>🔒</span> Security Patch</div>
+    </div>
+
+    <div class="footer">
+      &copy; 2026 &nbsp;|&nbsp; <strong>Technical Club, SCE Supaul</strong><br/>
+      Happy Engineers' Day! 🎉
+    </div>
+  </div>
+
+  <script>
+    // Generate floating particles
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.classList.add('particle');
+      const size = Math.random() * 6 + 2;
+      p.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        left: ${Math.random() * 100}%;
+        animation-duration: ${Math.random() * 12 + 8}s;
+        animation-delay: ${Math.random() * 10}s;
+        background: ${['rgba(243,156,18,0.3)','rgba(231,76,60,0.3)','rgba(155,89,182,0.3)','rgba(255,255,255,0.15)'][Math.floor(Math.random()*4)]};
+      `;
+      container.appendChild(p);
+    }
+  </script>
+
+</body>
+</html>

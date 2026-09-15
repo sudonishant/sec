@@ -12,6 +12,7 @@ const path = require('path');
 const url = require('url');
 
 const PORT = process.env.PORT || 8080;
+const MAINTENANCE_MODE = true; // 🔧 Set to false to disable maintenance mode
 const SUBMISSIONS_FILE = path.join(__dirname, 'submissions.json');
 const CSV_FILE = path.join(__dirname, 'submissions.csv');
 
@@ -47,6 +48,21 @@ const server = http.createServer((req, res) => {
 
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
+
+  // 🔧 MAINTENANCE MODE — redirects all page requests to maintenance.html
+  if (MAINTENANCE_MODE && !pathname.startsWith('/api/')) {
+    const maintFile = path.join(__dirname, 'maintenance.html');
+    fs.readFile(maintFile, (err, content) => {
+      if (err) {
+        res.writeHead(503, { 'Content-Type': 'text/plain' });
+        res.end('🔧 Site is under maintenance. Please try again later.');
+      } else {
+        res.writeHead(503, { 'Content-Type': 'text/html' });
+        res.end(content, 'utf8');
+      }
+    });
+    return;
+  }
 
   // Health check endpoint
   if (pathname === '/api/health') {

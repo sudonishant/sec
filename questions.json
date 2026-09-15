@@ -71,37 +71,37 @@
   },
   {
     "id": 11,
-    "question": "ISRO's Mars Orbiter Mission 'Mangalyaan' was launched in which year?",
-    "options": ["2011", "2013", "2015", "2017"],
+    "question": "Which technology made it possible to store and process information using two discrete states such as 0 and 1?",
+    "options": ["Analog Technology", "Binary Digital Technology", "Quantum Computing", "Optical Computing"],
     "correct": 1,
     "points": 1
   },
   {
     "id": 12,
-    "question": "Which engineering principle states: 'For every action, there is an equal and opposite reaction'?",
-    "options": ["Newton's First Law", "Newton's Second Law", "Newton's Third Law", "Archimedes' Principle"],
+    "question": "UPI, which has become a major part of India's digital payments ecosystem, was launched for public use in which year?",
+    "options": ["2014", "2015", "2016", "2018"],
     "correct": 2,
     "points": 1
   },
   {
     "id": 13,
-    "question": "What is the SI unit of electrical power?",
-    "options": ["Joule", "Ampere", "Watt", "Volt"],
+    "question": "Which technology is the foundation of modern computer chips and is heavily connected with AI, 5G and IoT hardware?",
+    "options": ["Nanotechnology", "Biotechnology", "Semiconductor Technology", "Quantum Technology"],
     "correct": 2,
     "points": 1
   },
   {
     "id": 14,
-    "question": "Which programming language is most commonly used in Embedded Systems and Microcontrollers?",
-    "options": ["Python", "Java", "C / C++", "JavaScript"],
-    "correct": 2,
+    "question": "Which major semiconductor-focused technology event is scheduled to take place in New Delhi from 17–19 September 2026?",
+    "options": ["India Tech Summit 2026", "Semicon India 2026", "Chip India Expo 2026", "India Electronics Week 2026"],
+    "correct": 1,
     "points": 1
   },
   {
     "id": 15,
-    "question": "The term 'Industry 4.0' refers to which revolution in manufacturing?",
-    "options": ["Steam-powered machines", "Mass production using electricity", "Digital automation with IoT, AI & Cyber-Physical Systems", "Robotics replacing manual labour only"],
-    "correct": 2,
+    "question": "At the 2026 BRICS Summit in New Delhi, which emerging technology initiative was proposed to promote cooperation among BRICS countries?",
+    "options": ["BRICS Digital Currency Alliance", "BRICS AI Cooperation Framework", "BRICS Semiconductor Partnership", "BRICS Cloud Computing Grid"],
+    "correct": 1,
     "points": 1
   }
 ]

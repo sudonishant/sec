@@ -12,7 +12,7 @@ const path = require('path');
 const url = require('url');
 
 const PORT = process.env.PORT || 8080;
-const MAINTENANCE_MODE = true; // 🔧 Set to false to disable maintenance mode
+const MAINTENANCE_MODE = false; // 🔧 Set to true to enable maintenance mode
 const SUBMISSIONS_FILE = path.join(__dirname, 'submissions.json');
 const CSV_FILE = path.join(__dirname, 'submissions.csv');
 

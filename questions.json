@@ -1,0 +1,107 @@
+[
+  {
+    "id": 1,
+    "question": "Engineers' Day in India is celebrated on 15th September to honour which great engineer?",
+    "options": ["A.P.J. Abdul Kalam", "M. Visvesvaraya", "Homi J. Bhabha", "C.V. Raman"],
+    "correct": 1,
+    "points": 1
+  },
+  {
+    "id": 2,
+    "question": "Sir M. Visvesvaraya was awarded which of India's highest civilian honour?",
+    "options": ["Padma Shri", "Padma Bhushan", "Bharat Ratna", "Padma Vibhushan"],
+    "correct": 2,
+    "points": 1
+  },
+  {
+    "id": 3,
+    "question": "Which engineering marvel was designed by M. Visvesvaraya — a dam that is still iconic today?",
+    "options": ["Bhakra Nangal Dam", "Hirakud Dam", "Krishna Raja Sagara (KRS) Dam", "Tehri Dam"],
+    "correct": 2,
+    "points": 1
+  },
+  {
+    "id": 4,
+    "question": "Who is known as the 'Father of Indian Civil Engineering'?",
+    "options": ["M. Visvesvaraya", "Sir Arthur Cotton", "Jamsetji Tata", "Birbal Sahni"],
+    "correct": 1,
+    "points": 1
+  },
+  {
+    "id": 5,
+    "question": "Which branch of engineering deals with the design and development of aircraft and spacecraft?",
+    "options": ["Mechanical Engineering", "Civil Engineering", "Aerospace Engineering", "Electrical Engineering"],
+    "correct": 2,
+    "points": 1
+  },
+  {
+    "id": 6,
+    "question": "The first electronic general-purpose computer ENIAC was built in which year?",
+    "options": ["1936", "1945", "1952", "1960"],
+    "correct": 1,
+    "points": 1
+  },
+  {
+    "id": 7,
+    "question": "Ohm's Law states the relationship between which three quantities?",
+    "options": ["Voltage, Current, Resistance", "Power, Energy, Time", "Force, Mass, Acceleration", "Pressure, Volume, Temperature"],
+    "correct": 0,
+    "points": 1
+  },
+  {
+    "id": 8,
+    "question": "Which Indian engineer co-founded Sun Microsystems?",
+    "options": ["Sabeer Bhatia", "Vinod Khosla", "Narayan Murthy", "Azim Premji"],
+    "correct": 1,
+    "points": 1
+  },
+  {
+    "id": 9,
+    "question": "What does 'CAD' stand for in engineering design?",
+    "options": ["Computer Aided Design", "Central Application Data", "Computer Automated Drawing", "Circuit Analysis Design"],
+    "correct": 0,
+    "points": 1
+  },
+  {
+    "id": 10,
+    "question": "Which material is known as the 'wonder material' of modern engineering due to its exceptional strength and conductivity?",
+    "options": ["Carbon Fibre", "Graphene", "Titanium", "Silicon"],
+    "correct": 1,
+    "points": 1
+  },
+  {
+    "id": 11,
+    "question": "ISRO's Mars Orbiter Mission 'Mangalyaan' was launched in which year?",
+    "options": ["2011", "2013", "2015", "2017"],
+    "correct": 1,
+    "points": 1
+  },
+  {
+    "id": 12,
+    "question": "Which engineering principle states: 'For every action, there is an equal and opposite reaction'?",
+    "options": ["Newton's First Law", "Newton's Second Law", "Newton's Third Law", "Archimedes' Principle"],
+    "correct": 2,
+    "points": 1
+  },
+  {
+    "id": 13,
+    "question": "What is the SI unit of electrical power?",
+    "options": ["Joule", "Ampere", "Watt", "Volt"],
+    "correct": 2,
+    "points": 1
+  },
+  {
+    "id": 14,
+    "question": "Which programming language is most commonly used in Embedded Systems and Microcontrollers?",
+    "options": ["Python", "Java", "C / C++", "JavaScript"],
+    "correct": 2,
+    "points": 1
+  },
+  {
+    "id": 15,
+    "question": "The term 'Industry 4.0' refers to which revolution in manufacturing?",
+    "options": ["Steam-powered machines", "Mass production using electricity", "Digital automation with IoT, AI & Cyber-Physical Systems", "Robotics replacing manual labour only"],
+    "correct": 2,
+    "points": 1
+  }
+]

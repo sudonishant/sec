@@ -1,0 +1,24 @@
+{
+  "name": "sec-supaul-anti-cheat-exam-system",
+  "version": "1.0.0",
+  "description": "Professional Anti-Cheat Online Examination System with Fullscreen Lock, 5-Warning Red Flag System, Screenshot/Copy Blockers, Dynamic Watermark & Google Sheets Integration for SCE Supaul.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "keywords": [
+    "anti-cheat",
+    "online-exam",
+    "sce-supaul",
+    "google-sheets",
+    "fullscreen-api",
+    "cheating-proof"
+  ],
+  "author": "Technical Club SEC Supaul",
+  "license": "MIT"
+}

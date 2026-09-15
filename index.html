@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Anti-Cheat Online Examination Portal | Technical Club - SCE Supaul</title>
+  <meta name="description" content="Official Anti-Cheat Cheating-Proof Examination System for Supaul College of Engineering (SCE Supaul). Features Fullscreen Enforcement, 5-Warning Red Flag Tab Switch System, Screenshot/DevTools Blockers, Dynamic Watermarking, and Direct Data Integration.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/exam.css">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- HTML2Canvas Library for Automatic Submit Screen Capture -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <!-- Dynamic Moving Watermark Layer (Anti-Screenshot Photo Protection) -->
+  <div id="dynamic-watermark-container"></div>
+
+  <!-- Official SCE Supaul Top Header Bar -->
+  <header class="exam-header" style="background: #ffffff; border-bottom: 1px solid #d0d7de; padding: 0.6rem 1.5rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100;">
+    <div style="display: flex; align-items: center; gap: 0.85rem;">
+      <img src="assets/logo.png" alt="Technical Club Logo" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #0275d8; box-shadow: 0 2px 8px rgba(2, 117, 216, 0.3); background: #ffffff; padding: 2px; flex-shrink: 0;">
+      <div>
+        <h1 style="font-family: Arial, sans-serif; font-size: 1.35rem; font-weight: 900; color: #003366; margin: 0; line-height: 1.1; letter-spacing: 0.5px;">
+          TECHNICAL CLUB <span style="color: #0275d8; font-weight: 900;">• SCE SUPAUL</span>
+        </h1>
+        <p style="font-size: 0.85rem; color: #222222; font-weight: 700; margin-top: 2px; line-height: 1.2;">
+          Supaul College of Engineering (BEU Patna • Govt. of Bihar)
+        </p>
+      </div>
+    </div>
+
+    <!-- Candidate & Monitor Header Card (Hidden on starting registration page) -->
+    <div style="display: none; align-items: center; gap: 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.4rem 0.85rem;" id="header-monitor-bar">
+      <div style="width: 36px; height: 36px; background: #6c757d; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; font-weight: bold;">👤</div>
+      <div style="font-size: 0.8rem; color: #333; line-height: 1.3;">
+        <div>Candidate Name : <strong style="color: #d9534f;" id="nta-candidate-name">[Your Name]</strong></div>
+        <div>Subject Name : <strong style="color: #f0ad4e;" id="nta-subject-name">Technical Club Quiz</strong></div>
+        <div>Remaining Time : <span style="background: #0275d8; color: #fff; padding: 0.1rem 0.5rem; border-radius: 3px; font-weight: bold; font-family: monospace; font-size: 0.9rem;" id="timer-text">15:00</span></div>
+      </div>
+      <div style="font-size: 0.78rem; font-weight: bold; color: #d9534f; border-left: 1px solid #ccc; padding-left: 0.75rem;">
+        Red Flags: <span id="warning-count-text" style="font-size: 0.9rem;">0 / 5</span>
+        <div class="warning-dots" id="warning-dots-bar" style="margin-top: 3px;"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Official Orange Navigation Bar -->
+  <div class="orange-nav-bar" style="background: #f47b20; padding: 0.5rem 1.5rem; display: flex; align-items: center; justify-content: space-between; color: #fff; font-weight: bold; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+    <div style="display: flex; align-items: center; gap: 0.6rem;">
+      <span style="background: #ffffff; color: #003366; padding: 0.35rem 0.85rem; border-radius: 3px; font-weight: 900; font-size: 0.88rem; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">⚡ TECHNICAL CLUB</span>
+      <span style="background: #0275d8; color: #ffffff; padding: 0.35rem 0.85rem; border-radius: 3px; font-size: 0.85rem; font-weight: 800;">SCE SUPAUL</span>
+      <span style="background: #27ae60; color: #ffffff; padding: 0.35rem 0.85rem; border-radius: 3px; font-size: 0.85rem; font-weight: 800;">OFFICIAL EXAM PORTAL</span>
+    </div>
+    <div style="font-size: 0.82rem; display: flex; align-items: center; gap: 0.5rem;">
+      <span>Paper Language:</span>
+      <select style="padding: 0.2rem 0.5rem; border-radius: 2px; border: none; font-weight: bold; background: #fff; color: #333;"><option>English</option><option>Hindi</option></select>
+    </div>
+  </div>
+
+  <!-- Main Content Layout -->
+  <main class="main-layout">
+
+    <!-- STEP 1: Minimal Clean Student Registration Screen -->
+    <div class="auth-card" id="registration-card" style="max-width: 540px; margin: 2rem auto; padding: 2rem; background: #ffffff; border: 1px solid #d0d7de; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
+      
+      <!-- Top Brand Header Banner -->
+      <div style="text-align: center; margin-bottom: 1.75rem;">
+        <img src="assets/logo.png" alt="Technical Club Logo" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #0275d8; box-shadow: 0 4px 15px rgba(2, 117, 216, 0.35); background: #ffffff; padding: 4px; margin-bottom: 0.85rem; display: inline-block;">
+        <h2 style="font-family: Arial, sans-serif; font-size: 2.1rem; font-weight: 900; margin-bottom: 0.35rem; color: #003366 !important; -webkit-text-fill-color: #003366 !important; background: none !important; letter-spacing: 0.5px;">
+          TECHNICAL CLUB
+        </h2>
+        <div style="font-size: 1.05rem; color: #0275d8; font-weight: 900; margin-bottom: 0.25rem;">
+          Supaul College of Engineering (BEU Patna • Govt. of Bihar)
+        </div>
+        <div style="font-size: 0.88rem; color: #333333; font-weight: 700; background: #e8f4f8; padding: 0.35rem 0.85rem; border-radius: 20px; display: inline-block; margin-top: 6px; border: 1px solid #b8daff;">
+          "— we make things easy —"
+        </div>
+      </div>
+
+      <form id="registration-form">
+        <div class="form-group" style="margin-bottom: 1.1rem;">
+          <label for="student-name" style="font-size: 0.88rem; color: #333; font-weight: bold;"><i data-lucide="user" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #0275d8;"></i> Student Full Name *</label>
+          <input type="text" id="student-name" class="form-control" placeholder="Enter your full name" style="padding: 0.85rem 1rem; font-size: 0.95rem;" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.1rem;">
+          <label for="student-roll" style="font-size: 0.88rem; color: #333; font-weight: bold;"><i data-lucide="hash" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #0275d8;"></i> Roll / Registration No *</label>
+          <input type="text" id="student-roll" class="form-control" placeholder="e.g. 21105123001" style="padding: 0.85rem 1rem; font-size: 0.95rem;" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="student-branch" style="font-size: 0.88rem; color: #333; font-weight: bold;"><i data-lucide="layers" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #0275d8;"></i> Engineering Branch *</label>
+          <select id="student-branch" class="form-control" style="padding: 0.85rem 1rem; font-size: 0.92rem;">
+            <option value="Computer Science & Engineering (CSE)">Computer Science & Engineering (CSE)</option>
+            <option value="CSE - Artificial Intelligence (CSE-AI)">CSE - Artificial Intelligence (CSE-AI)</option>
+            <option value="Mathematics & Computing">Mathematics & Computing</option>
+            <option value="Electronics & Communication Engineering (ECE)">Electronics & Comm Engineering (ECE)</option>
+            <option value="Electrical Engineering (EE)">Electrical Engineering (EE)</option>
+            <option value="Civil Engineering (CE)">Civil Engineering (CE)</option>
+            <option value="Mechanical Engineering (ME)">Mechanical Engineering (ME)</option>
+          </select>
+        </div>
+
+        <!-- Hidden input for subject name to preserve backend functionality -->
+        <input type="hidden" id="student-subject" value="Supaul College of Engineering - Technical Club Quiz">
+
+        <button type="submit" class="btn-exam" id="start-exam-btn" style="padding: 0.9rem; font-size: 1.05rem; border-radius: 3px; background: #0275d8; color: #fff; font-weight: bold; width: 100%; border: none; cursor: pointer;">
+          Start Exam 🚀
+        </button>
+      </form>
+    </div>
+
+    <!-- STEP 2: Active Anti-Cheat Quiz Engine Interface (Compact Pure White Layout) -->
+    <div class="quiz-grid" id="quiz-main-section" style="display: none; grid-template-columns: 1fr 290px; gap: 1.25rem;">
+      
+      <!-- Left Column: Question Box & Action Buttons -->
+      <div class="question-box" style="background: #ffffff; border: 1px solid #d0d7de; border-radius: 4px; padding: 1.5rem; color: #111827; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 2px solid #003366; padding-bottom: 0.5rem;">
+          <h3 style="font-size: 1.25rem; font-weight: bold; color: #003366; margin: 0;" id="q-number-title">Question 1:</h3>
+          <span style="font-size: 0.82rem; background: #e8f4f8; color: #0275d8; padding: 0.2rem 0.6rem; border-radius: 3px; font-weight: bold;">+1 Point</span>
+        </div>
+
+        <div class="question-text" id="q-text-body" style="font-size: 1.15rem; color: #111; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.5;">
+          Loading question text...
+        </div>
+
+        <div class="options-group" id="q-options-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
+          <!-- Options rendered dynamically by JS -->
+        </div>
+
+        <!-- Main Action Buttons Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.5rem; border-top: 1px solid #e0e0e0; padding-top: 1.1rem;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+            <button onclick="saveAndNext()" style="background: #0275d8; color: #ffffff; font-weight: bold; border: none; padding: 0.65rem 1.35rem; border-radius: 4px; cursor: pointer; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(2,117,216,0.3);">
+              💾 SAVE & NEXT
+            </button>
+            <button onclick="markForReviewAndNext()" style="background: #9b51e0; color: #ffffff; font-weight: bold; border: none; padding: 0.65rem 1.1rem; border-radius: 4px; cursor: pointer; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(155,81,224,0.25);">
+              🟪 MARK FOR REVIEW & NEXT
+            </button>
+            <button onclick="clearResponse()" style="background: #ffffff; color: #333333; border: 1px solid #cccccc; font-weight: bold; padding: 0.65rem 1.1rem; border-radius: 4px; cursor: pointer; font-size: 0.88rem;">
+              🧹 CLEAR RESPONSE
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation & Protected Submit Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; background: #f8f9fa; padding: 0.85rem 1rem; border-radius: 4px; border: 1px solid #e0e0e0; flex-wrap: wrap; gap: 0.75rem;">
+          <div style="display: flex; gap: 0.6rem;">
+            <button id="prev-q-btn" onclick="navigateQuestion(-1)" style="background: #ffffff; border: 1px solid #cccccc; color: #003366; padding: 0.5rem 1.25rem; font-weight: bold; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">
+              &lt;&lt; BACK
+            </button>
+            <button id="next-q-btn" onclick="saveAndNext()" style="background: #ffffff; border: 1px solid #0275d8; color: #0275d8; padding: 0.5rem 1.25rem; font-weight: bold; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">
+              NEXT &gt;&gt;
+            </button>
+          </div>
+          <button id="main-submit-btn" onclick="confirmAndSubmitExam()" style="background: #27ae60; color: #ffffff; font-weight: 900; border: none; padding: 0.6rem 1.6rem; border-radius: 4px; cursor: pointer; font-size: 0.92rem; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(39,174,96,0.3);">
+            🚀 SUBMIT EXAM
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Column: Compact Pure White Question Palette Sidebar -->
+      <div class="palette-box" style="background: #ffffff; border: 1px solid #d0d7de; border-radius: 4px; padding: 0.85rem; color: #111; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: sticky; top: 80px; height: fit-content;">
+        <!-- Candidate info box inside palette sidebar -->
+        <div style="display: flex; align-items: center; gap: 0.65rem; background: #f8f9fa; border: 1px solid #e0e0e0; padding: 0.5rem 0.65rem; border-radius: 3px; margin-bottom: 0.75rem;">
+          <div style="width: 32px; height: 32px; background: #003366; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.95rem;">👤</div>
+          <div style="overflow: hidden; font-size: 0.8rem; line-height: 1.2;">
+            <strong style="color: #003366; display: block; font-weight: bold;" id="sidebar-student-name">Student Candidate</strong>
+            <span style="color: #666; font-size: 0.75rem;" id="sidebar-student-roll">Roll No: N/A</span>
+          </div>
+        </div>
+
+        <!-- 4 Legend Categories Box -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.72rem; margin-bottom: 0.85rem; background: #ffffff; padding: 0.6rem; border-radius: 3px; border: 1px solid #e0e0e0; font-weight: bold;">
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #ffffff; border: 1px solid #ccc; border-radius: 2px; font-weight: bold; font-size: 0.7rem; color: #333;" id="count-not-visited">15</span>
+            <span style="color: #555;">Not Visited</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #eb5757; color: #fff; border-radius: 6px 6px 2px 2px; font-weight: bold; font-size: 0.7rem;" id="count-not-answered">0</span>
+            <span style="color: #333;">Not Answered</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #27ae60; color: #fff; border-radius: 2px 2px 6px 6px; font-weight: bold; font-size: 0.7rem;" id="count-answered">0</span>
+            <span style="color: #333;">Answered</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #9b51e0; color: #fff; border-radius: 50%; font-weight: bold; font-size: 0.7rem;" id="count-marked">0</span>
+            <span style="color: #333;">Marked Review</span>
+          </div>
+        </div>
+
+        <h4 style="margin-bottom: 0.5rem; font-size: 0.82rem; color: #003366; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 0.35rem;">Question Palette:</h4>
+        <div class="palette-grid" id="question-palette-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; margin-bottom: 0.5rem;">
+          <!-- Palette buttons rendered dynamically in 5 columns (3 rows of 5) -->
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Pure White High-Contrast Result Screen -->
+    <div class="result-card" id="result-screen-card" style="display: none; background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; padding: 2.5rem; max-width: 680px; margin: 2rem auto; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center;">
+
+      <div class="modal-icon" style="border: 2px solid #0275d8; color: #0275d8; background: #e8f4f8; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 2rem; box-shadow: 0 4px 12px rgba(2,117,216,0.2);">
+        🏆
+      </div>
+
+      <h2 id="result-title" style="font-size: 1.9rem; color: #003366; font-weight: 900; margin-bottom: 0.35rem;">Examination Completed</h2>
+      <p id="result-sub" style="color: #555555; font-size: 0.95rem; font-weight: 600; margin-bottom: 1.5rem;">Your responses and submit screen snapshot have been archived.</p>
+
+      <!-- Giant Ultra-Clear High-Contrast Score Banner -->
+      <div style="background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f7 100%); border: 3px solid #0275d8; border-radius: 12px; padding: 1.25rem 2rem; margin: 1.5rem auto; max-width: 340px; box-shadow: 0 4px 15px rgba(2, 117, 216, 0.18);">
+        <div style="font-size: 0.85rem; font-weight: 900; color: #0275d8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.35rem;">FINAL SCORE</div>
+        <div class="score-num" id="res-score" style="font-family: Arial, sans-serif; font-size: 3.6rem; font-weight: 900; color: #003366; line-height: 1; letter-spacing: 1px;">0/15</div>
+      </div>
+
+      <!-- Student Details Summary Grid -->
+      <div style="display: flex; justify-content: space-around; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Student Name</span>
+          <strong id="res-student-name" style="color: #003366; font-size: 1.1rem; font-weight: 800;">-</strong>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Roll Number</span>
+          <strong id="res-roll-no" style="color: #0275d8; font-size: 1.1rem; font-weight: 800; font-family: monospace;">-</strong>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Percentage</span>
+          <strong id="res-percentage" style="color: #27ae60; font-size: 1.1rem; font-weight: 900;">-</strong>
+        </div>
+        <div>
+          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Violations</span>
+          <strong id="res-warnings" style="color: #d9534f; font-size: 1.1rem; font-weight: 900;">-</strong>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <span class="status-badge" id="res-status-badge" style="background: #27ae60; color: #ffffff; padding: 0.4rem 1.2rem; border-radius: 20px; font-weight: 900; font-size: 0.9rem; letter-spacing: 0.5px;">COMPLETED</span>
+      </div>
+
+      <!-- Violation Logs Summary Table -->
+      <h4 style="text-align: left; font-size: 0.92rem; color: #003366; margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">
+        🛡️ Anti-Cheat Session Audit Logs:
+      </h4>
+      <table class="log-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6; background: #ffffff;">
+        <thead>
+          <tr style="background: #f1f5f9; color: #334155; font-size: 0.85rem;">
+            <th style="padding: 0.6rem; border: 1px solid #cbd5e1; text-align: left;">Time</th>
+            <th style="padding: 0.6rem; border: 1px solid #cbd5e1; text-align: left;">Security Event Logged</th>
+          </tr>
+        </thead>
+        <tbody id="violation-table-body" style="font-size: 0.88rem; color: #333333;">
+          <!-- Filled by JS -->
+        </tbody>
+      </table>
+
+      <!-- Sync Status Indicator -->
+      <div id="sheet-sync-status" style="margin-top: 1.5rem; padding: 0.85rem; background: #e8f4f8; border-radius: 6px; border: 1px solid #b8daff; font-size: 0.9rem; color: #003366; font-weight: 700;">
+        ⏳ Transmitting Exam Data & Submit Screen Snapshot...
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Fullscreen Exit Warning Modal Overlay -->
+  <div class="security-modal-overlay" id="fullscreen-warning-modal">
+    <div class="modal-content-box">
+      <div class="modal-icon">
+        <i data-lucide="alert-octagon"></i>
+      </div>
+      <h2>🚨 FULLSCREEN EXITED / ESCAPE PRESSED!</h2>
+      <p>
+        Warning: Exam policy requires mandatory full screen mode. Leaving full screen or pressing Escape is logged as an Anti-Cheat violation.
+      </p>
+      <button class="btn-exam btn-danger" id="re-fullscreen-btn">
+        <i data-lucide="maximize-2"></i> Re-Enter Full Screen Mode Now
+      </button>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification for Security Warnings -->
+  <div class="cheat-toast" id="cheat-toast">
+    ⚠️ Red Flag Warning Triggered!
+  </div>
+
+  <!-- JavaScript Scripts -->
+  <script src="js/anti-cheat-exam.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

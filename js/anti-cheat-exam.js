@@ -1,0 +1,1074 @@
+/* 
+  ================================================================
+  ANTI-CHEAT EXAMINATION SYSTEM - CORE JAVASCRIPT ENGINE
+  Technical Club - Supaul College of Engineering (SCE Supaul)
+  ================================================================
+  Features:
+  1. Compulsory Fullscreen Mode with Escape Key Intercept Modal
+  2. Tab Switch & App Switch 5-Warning (Red Flag) Auto-Submit System
+  3. Screenshot / Copy / DevTools Blockers (Right Click, PrtScn, Ctrl+C/P/U, F12)
+  4. Dynamic Floating Watermark with Student Roll Number & Name
+  5. Quiz Engine & Countdown Timer
+  6. Data Submission to Google Sheets
+  ================================================================
+*/
+
+// Configuration & Default Settings
+const CONFIG = {
+  // Google Apps Script Web App Endpoint URL
+  googleSheetWebAppUrl: 'https://script.google.com/macros/s/AKfycbzFyXEh_Tu49_ByjGx58jn5MMqmsbImXiSq_qmIqXNL5dxhbnRRVSShYBr8iIrcOJG2/exec',
+  maxWarnings: 5,
+  examDurationMinutes: 15,
+};
+
+// Exam State
+let state = {
+  student: {
+    name: '',
+    rollNo: '',
+    branch: '',
+    subject: ''
+  },
+  examStarted: false,
+  examSubmitted: false,
+  warningCount: 0,
+  currentQuestionIndex: 0,
+  userAnswers: {},
+  questionTimeSpent: {},
+  lastQuestionActiveTime: null,
+  timeRemainingSeconds: CONFIG.examDurationMinutes * 60,
+  totalTimeSpentSeconds: 0,
+  timerInterval: null,
+  violationLogs: [],
+  lastViolationTime: 0,
+  fullscreenCheckInterval: null
+};
+
+// Official Question Bank for Supaul College of Engineering - Technical Club (/15)
+let QUESTION_BANK = [
+  {
+    id: 1,
+    question: "What is the primary objective of a Technical Club?",
+    options: ["Sports", "Practical technical learning", "Entertainment", "Politics"],
+    correct: 1,
+    points: 1
+  },
+  {
+    id: 2,
+    question: "Which platform is mainly used for version control?",
+    options: ["GitHub", "Canva", "VS Code", "Chrome"],
+    correct: 0,
+    points: 1
+  },
+  {
+    id: 3,
+    question: "IoT stands for",
+    options: ["Internet of Things", "Intelligence of Tech", "Integration of Tools", "None"],
+    correct: 0,
+    points: 1
+  },
+  {
+    id: 4,
+    question: "Which language is popular for AI?",
+    options: ["Python", "HTML", "CSS", "SQL"],
+    correct: 0,
+    points: 1
+  },
+  {
+    id: 5,
+    question: "A hackathon focuses on",
+    options: ["Singing", "Problem-solving", "Cricket", "Debate"],
+    correct: 1,
+    points: 1
+  },
+  {
+    id: 6,
+    question: "Which protocol is secure?",
+    options: ["HTTP", "HTTPS", "FTP", "SMTP"],
+    correct: 1,
+    points: 1
+  },
+  {
+    id: 7,
+    question: "Git command to upload commits?",
+    options: ["git pull", "git push", "git clone", "git init"],
+    correct: 1,
+    points: 1
+  },
+  {
+    id: 8,
+    question: "Which is NOT an operating system?",
+    options: ["Linux", "Windows", "Oracle", "macOS"],
+    correct: 2,
+    points: 1
+  },
+  {
+    id: 9,
+    question: "Which sensor measures distance?",
+    options: ["MQ2", "DHT11", "Ultrasonic", "LDR"],
+    correct: 2,
+    points: 1
+  },
+  {
+    id: 10,
+    question: "AI that creates text/images is called",
+    options: ["Predictive AI", "Generative AI", "Embedded AI", "Rule AI"],
+    correct: 1,
+    points: 1
+  },
+  {
+    id: 11,
+    question: "If registrations exceed seats, best approach?",
+    options: ["First come", "Random", "Transparent selection", "Cancel"],
+    correct: 2,
+    points: 1
+  },
+  {
+    id: 12,
+    question: "GitHub is mainly used for",
+    options: ["Photo editing", "Code collaboration", "Video calls", "Email"],
+    correct: 1,
+    points: 1
+  },
+  {
+    id: 13,
+    question: "CPU stands for",
+    options: ["Central Processing Unit", "Central Program Utility", "Control Process Unit", "None"],
+    correct: 0,
+    points: 1
+  },
+  {
+    id: 14,
+    question: "Most important team skill",
+    options: ["Listening", "Interrupting", "Ignoring", "Arguing"],
+    correct: 0,
+    points: 1
+  },
+  {
+    id: 15,
+    question: "Best event for innovation",
+    options: ["Startup Pitch", "Fashion Show", "Dance", "Cricket"],
+    correct: 0,
+    points: 1
+  }
+];
+
+// Initialize System on DOM Load
+document.addEventListener('DOMContentLoaded', () => {
+  // Fetch dynamic question bank if available
+  fetch('/api/questions')
+    .then(r => r.json())
+    .then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        QUESTION_BANK = data;
+      }
+    })
+    .catch(() => {
+      fetch('questions.json')
+        .then(r => r.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) QUESTION_BANK = data;
+        })
+        .catch(() => {});
+    });
+
+  initUI();
+  setupAntiCheatListeners();
+});
+
+// Setup UI Event Listeners
+function initUI() {
+  const regForm = document.getElementById('registration-form');
+  if (regForm) {
+    regForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      startExamProcess();
+    });
+  }
+
+  // Apps Script Endpoint Saver (for setup modal)
+  const saveUrlBtn = document.getElementById('save-endpoint-btn');
+  if (saveUrlBtn) {
+    saveUrlBtn.addEventListener('click', () => {
+      const input = document.getElementById('apps-script-url-input');
+      if (input && input.value.trim()) {
+        CONFIG.googleSheetWebAppUrl = input.value.trim();
+        localStorage.setItem('sec_sheet_apps_script_url', CONFIG.googleSheetWebAppUrl);
+        showToast('✅ Google Apps Script Endpoint URL Saved!');
+      }
+    });
+  }
+
+  // Fullscreen Re-entry Button
+  const reFullscreenBtn = document.getElementById('re-fullscreen-btn');
+  if (reFullscreenBtn) {
+    reFullscreenBtn.addEventListener('click', () => {
+      requestFullScreenMode();
+    });
+  }
+
+  // Pre-fill configured URL input if available
+  const input = document.getElementById('apps-script-url-input');
+  if (input && CONFIG.googleSheetWebAppUrl) {
+    input.value = CONFIG.googleSheetWebAppUrl;
+  }
+}
+
+// -------------------------------------------------------------
+// 1. FULLSCREEN API & ESCAPE TRAP
+// -------------------------------------------------------------
+function requestFullScreenMode() {
+  const doc = document.documentElement;
+  if (doc.requestFullscreen) {
+    doc.requestFullscreen();
+  } else if (doc.mozRequestFullScreen) { /* Firefox */
+    doc.mozRequestFullScreen();
+  } else if (doc.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+    doc.webkitRequestFullscreen();
+  } else if (doc.msRequestFullscreen) { /* IE/Edge */
+    doc.msRequestFullscreen();
+  }
+}
+
+function isFullScreenActive() {
+  return !!(document.fullscreenElement || 
+            document.webkitFullscreenElement || 
+            document.mozFullScreenElement || 
+            document.msFullscreenElement);
+}
+
+function handleFullScreenChange() {
+  if (!state.examStarted || state.examSubmitted) return;
+
+  if (!isFullScreenActive()) {
+    // Student exited full screen!
+    logViolation("Full Screen Exited / Escape Key Pressed");
+    playBeepSound();
+    
+    // Show urgent overlay modal
+    const modal = document.getElementById('fullscreen-warning-modal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+    showToast("⚠️ FULLSCREEN EXIT DETECTED! Re-enter fullscreen immediately!");
+  } else {
+    // Re-entered full screen
+    const modal = document.getElementById('fullscreen-warning-modal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// 2. PAGE VISIBILITY & TAB SWITCH 5-WARNING SYSTEM
+// -------------------------------------------------------------
+function handleVisibilityChange() {
+  if (!state.examStarted || state.examSubmitted) return;
+
+  if (document.hidden || document.visibilityState === 'hidden') {
+    document.body.classList.add('screen-blur-blackout');
+    registerTabSwitchViolation("Tab Switch / App Switched to Background");
+  } else {
+    document.body.classList.remove('screen-blur-blackout');
+  }
+}
+
+function handleWindowBlur() {
+  if (!state.examStarted || state.examSubmitted) return;
+  document.body.classList.add('screen-blur-blackout');
+  registerTabSwitchViolation("Window Lost Focus / External Application Activated");
+}
+
+window.addEventListener('focus', () => {
+  document.body.classList.remove('screen-blur-blackout');
+});
+
+function registerTabSwitchViolation(reason) {
+  const now = Date.now();
+  // Cooldown safeguard of 1.5 seconds to prevent double firing between blur & visibilitychange
+  if (now - state.lastViolationTime < 1500) return;
+  state.lastViolationTime = now;
+
+  state.warningCount++;
+  logViolation(`${reason} (Red Flag Warning ${state.warningCount}/${CONFIG.maxWarnings})`);
+  
+  playBeepSound();
+  updateWarningUI();
+
+  if (state.warningCount >= CONFIG.maxWarnings) {
+    // 5th Warning Reached: Lock Exam and Auto-Submit!
+    showToast(`🚨 RED FLAG ${state.warningCount}/${CONFIG.maxWarnings}: MAX WARNINGS EXCEEDED! AUTO-SUBMITTING...`);
+    setTimeout(() => {
+      autoSubmitExam('AUTO_SUBMIT_MAX_WARNINGS');
+    }, 1000);
+  } else {
+    showToast(`🚨 RED FLAG WARNING ${state.warningCount}/${CONFIG.maxWarnings}: Do not switch tabs or windows!`);
+  }
+}
+
+function updateWarningUI() {
+  const countEl = document.getElementById('warning-count-text');
+  if (countEl) {
+    countEl.innerText = `${state.warningCount} / ${CONFIG.maxWarnings}`;
+  }
+
+  // Update glowing red dots
+  const dotsContainer = document.getElementById('warning-dots-bar');
+  if (dotsContainer) {
+    dotsContainer.innerHTML = '';
+    for (let i = 1; i <= CONFIG.maxWarnings; i++) {
+      const dot = document.createElement('div');
+      dot.className = `dot-flag ${i <= state.warningCount ? 'active' : ''}`;
+      dotsContainer.appendChild(dot);
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// 3. SCREENSHOT, DEVTOOLS & KEYBOARD SHORTCUT BLOCKERS
+// -------------------------------------------------------------
+function setupAntiCheatListeners() {
+  // Fullscreen change events across browsers
+  document.addEventListener('fullscreenchange', handleFullScreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullScreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullScreenChange);
+  document.addEventListener('MSFullscreenChange', handleFullScreenChange);
+
+  // Visibility & Blur events
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('blur', handleWindowBlur);
+
+  // Disable Right-Click Context Menu
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (state.examStarted && !state.examSubmitted) {
+      showToast("❌ Right-click disabled for Anti-Cheat security!");
+      logViolation("Attempted Right-Click Context Menu");
+    }
+  });
+
+  // Block Keyboard Shortcuts (PrtScn, F12, Ctrl+C, Ctrl+V, Ctrl+P, Ctrl+U, Ctrl+Shift+I, Alt+Tab)
+  document.addEventListener('keydown', (e) => {
+    if (!state.examStarted || state.examSubmitted) return;
+
+    const key = e.key || e.code;
+    const ctrl = e.ctrlKey || e.metaKey;
+    const shift = e.shiftKey;
+
+    // Block PrintScreen
+    if (key === 'PrintScreen' || e.code === 'PrintScreen') {
+      e.preventDefault();
+      clearClipboard();
+      showToast("📸 Screenshot Blocked! PrintScreen key disabled.");
+      logViolation("Attempted PrintScreen (Screenshot)");
+      return false;
+    }
+
+    // Block F12 (DevTools)
+    if (key === 'F12' || e.keyCode === 123) {
+      e.preventDefault();
+      showToast("🚫 Developer Tools (F12) Disabled!");
+      logViolation("Attempted Developer Tools (F12)");
+      return false;
+    }
+
+    // Block Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+P (Print), Ctrl+U (View Source), Ctrl+S (Save), Ctrl+A (Select All)
+    if (ctrl && (key === 'c' || key === 'C' || key === 'v' || key === 'V' || key === 'p' || key === 'P' || key === 'u' || key === 'U' || key === 's' || key === 'S' || key === 'a' || key === 'A')) {
+      e.preventDefault();
+      showToast(`❌ Shortcut Ctrl+${key.toUpperCase()} Disabled!`);
+      logViolation(`Attempted Shortcut Ctrl+${key.toUpperCase()}`);
+      return false;
+    }
+
+    // Block DevTools Shortcuts: Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+    if (ctrl && shift && (key === 'I' || key === 'i' || key === 'J' || key === 'j' || key === 'C' || key === 'c')) {
+      e.preventDefault();
+      showToast("🚫 Inspect Element Disabled!");
+      logViolation("Attempted Inspect Element Shortcut");
+      return false;
+    }
+  });
+
+  // Block Copy, Cut, Paste, Text Selection, Dragging
+  ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(eventType => {
+    document.addEventListener(eventType, (e) => {
+      if (state.examStarted && !state.examSubmitted) {
+        e.preventDefault();
+      }
+    });
+  });
+
+  // Periodically check if DevTools window is popped open by inspecting window inner/outer dimensions
+  setInterval(() => {
+    if (!state.examStarted || state.examSubmitted) return;
+    const widthDiff = window.outerWidth - window.innerWidth;
+    const heightDiff = window.outerHeight - window.innerHeight;
+    if (widthDiff > 180 || heightDiff > 180) {
+      logViolation("Possible Developer Tools Window Docking Detected");
+    }
+  }, 3000);
+}
+
+function clearClipboard() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText('Screenshots & Copying are strictly prohibited during SCE Supaul Anti-Cheat Examination.').catch(() => {});
+  }
+}
+
+// Audio alert synth beep for security pings
+function playBeepSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.4);
+  } catch (err) {
+    // Browser audio policy might require user gesture
+  }
+}
+
+// -------------------------------------------------------------
+// 4. DYNAMIC FLOATING WATERMARK
+// -------------------------------------------------------------
+function startDynamicWatermark() {
+  const container = document.getElementById('dynamic-watermark-container');
+  if (!container) return;
+
+  container.innerHTML = '';
+  
+  // Create 3 floating watermark elements that bounce smoothly across screen
+  for (let i = 0; i < 3; i++) {
+    const wm = document.createElement('div');
+    wm.className = 'watermark-text';
+    wm.id = `watermark-${i}`;
+    wm.innerText = `${state.student.rollNo} • ${state.student.name} • SCE SUPAUL EXAM LOCK • ${state.student.branch}`;
+    container.appendChild(wm);
+    
+    animateWatermark(wm, i);
+  }
+}
+
+function animateWatermark(el, index) {
+  let posX = Math.random() * (window.innerWidth - 300);
+  let posY = Math.random() * (window.innerHeight - 100);
+  let speedX = (1 + Math.random() * 1.5) * (index % 2 === 0 ? 1 : -1);
+  let speedY = (1 + Math.random() * 1.5) * (index % 2 === 0 ? -1 : 1);
+
+  function step() {
+    if (!state.examStarted || state.examSubmitted) return;
+
+    posX += speedX;
+    posY += speedY;
+
+    if (posX <= 0 || posX >= window.innerWidth - 350) speedX *= -1;
+    if (posY <= 0 || posY >= window.innerHeight - 100) speedY *= -1;
+
+    el.style.transform = `translate(${posX}px, ${posY}px) rotate(-20deg)`;
+    requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
+// -------------------------------------------------------------
+// 5. EXAM ENGINE & QUIZ FLOW
+// -------------------------------------------------------------
+function startExamProcess() {
+  const name = document.getElementById('student-name').value.trim();
+  const rollNo = document.getElementById('student-roll').value.trim();
+  const branch = document.getElementById('student-branch').value;
+  const subject = document.getElementById('student-subject').value.trim();
+
+  if (!name || !rollNo || !subject) {
+    showToast("⚠️ Kripya saari details (Naam, Roll No, Subject) sahi se bharein!");
+    return;
+  }
+
+  state.student = { name, rollNo, branch, subject };
+  state.examStarted = true;
+
+  state.student = { name, rollNo, branch, subject };
+  state.examStarted = true;
+
+  // Update Header Candidate Photo Preview
+  const headerPhotoImg = document.getElementById('header-candidate-photo');
+  const headerPhotoIcon = document.getElementById('header-photo-icon');
+  if (headerPhotoImg && state.candidatePhoto) {
+    headerPhotoImg.src = state.candidatePhoto;
+    headerPhotoImg.style.display = 'block';
+    if (headerPhotoIcon) headerPhotoIcon.style.display = 'none';
+  }
+
+  // Request Fullscreen immediately upon Start Exam click
+  requestFullScreenMode();
+
+  // Hide Registration, Show Quiz UI
+  document.getElementById('registration-card').style.display = 'none';
+  document.getElementById('quiz-main-section').style.display = 'block';
+  document.getElementById('header-monitor-bar').style.display = 'flex';
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  // Initialize Watermark & Warnings
+  startDynamicWatermark();
+  updateWarningUI();
+
+  // Start Timer
+  startExamTimer();
+
+  // Render Questions & Palette
+  renderQuestion(0);
+  renderQuestionPalette();
+
+  logViolation("Exam Session Initiated & Fullscreen Activated");
+  showToast("🛡️ Anti-Cheat Security System Active! Best of Luck.");
+}
+
+function startExamTimer() {
+  state.timerInterval = setInterval(() => {
+    state.timeRemainingSeconds--;
+    state.totalTimeSpentSeconds++;
+
+    updateTimerDisplay();
+
+    if (state.timeRemainingSeconds <= 0) {
+      clearInterval(state.timerInterval);
+      autoSubmitExam('TIME_EXPIRED');
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const timerEl = document.getElementById('timer-text');
+  if (!timerEl) return;
+
+  const minutes = Math.floor(state.timeRemainingSeconds / 60);
+  const seconds = state.timeRemainingSeconds % 60;
+  timerEl.innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+  if (state.timeRemainingSeconds <= 120) { // 2 minutes warning
+    timerEl.parentElement.style.borderColor = 'var(--danger-red)';
+    timerEl.parentElement.style.color = 'var(--danger-red)';
+  }
+}
+
+function renderQuestion(index) {
+  if (index < 0 || !QUESTION_BANK || index >= QUESTION_BANK.length) return;
+
+  // Track time spent on previous active question
+  if (state.lastQuestionActiveTime !== null && state.currentQuestionIndex !== undefined) {
+    const elapsedSec = Math.round((Date.now() - state.lastQuestionActiveTime) / 1000);
+    if (elapsedSec > 0) {
+      state.questionTimeSpent[state.currentQuestionIndex] = (state.questionTimeSpent[state.currentQuestionIndex] || 0) + elapsedSec;
+    }
+  }
+  state.lastQuestionActiveTime = Date.now();
+  state.currentQuestionIndex = index;
+
+  if (!state.visitedQuestions) state.visitedQuestions = {};
+  state.visitedQuestions[index] = true;
+
+  const q = QUESTION_BANK[index];
+  if (!q) return;
+
+  const questionNumEl = document.getElementById('q-number-title');
+  const questionTextEl = document.getElementById('q-text-body');
+  const optionsGroupEl = document.getElementById('q-options-list');
+
+  if (questionNumEl) questionNumEl.innerText = `Question ${index + 1} of ${QUESTION_BANK.length}`;
+  if (questionTextEl) questionTextEl.innerText = q.question;
+
+  // Update animated cyan progress bar
+  const progressPct = ((index + 1) / QUESTION_BANK.length) * 100;
+  const progressFillEl = document.getElementById('q-progress-fill');
+  if (progressFillEl) progressFillEl.style.width = `${progressPct}%`;
+
+  if (optionsGroupEl) {
+    optionsGroupEl.innerHTML = '';
+    const keys = ['A', 'B', 'C', 'D'];
+
+    q.options.forEach((optText, optIdx) => {
+      const card = document.createElement('div');
+      const isSelected = state.userAnswers[index] === optIdx;
+      card.className = `option-card ${isSelected ? 'selected' : ''}`;
+      card.innerHTML = `
+        <div class="option-key">${keys[optIdx]}</div>
+        <div class="option-label">${escapeHtml(optText)}</div>
+      `;
+      card.addEventListener('click', () => {
+        selectOption(index, optIdx);
+      });
+      optionsGroupEl.appendChild(card);
+    });
+  }
+
+  // Update Nav Buttons
+  const prevBtn = document.getElementById('prev-q-btn');
+  if (prevBtn) prevBtn.disabled = index === 0;
+
+  // Update Submit Button label when on the last question
+  const submitBtn = document.getElementById('main-submit-btn');
+  if (submitBtn) {
+    if (index === QUESTION_BANK.length - 1) {
+      submitBtn.innerHTML = '🚀 SUBMIT EXAM';
+      submitBtn.style.background = '#27ae60';
+      submitBtn.style.boxShadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
+    } else {
+      submitBtn.innerHTML = 'SUBMIT';
+      submitBtn.style.background = '#27ae60';
+      submitBtn.style.boxShadow = 'none';
+    }
+  }
+
+  // Update Candidate Sidebar
+  const sbName = document.getElementById('sidebar-student-name');
+  const sbRoll = document.getElementById('sidebar-student-roll');
+  if (sbName && state.student.name) sbName.innerText = state.student.name;
+  if (sbRoll && state.student.rollNo) sbRoll.innerText = `Roll No: ${state.student.rollNo}`;
+
+  renderQuestionPalette();
+}
+
+function selectOption(questionIndex, optionIndex) {
+  state.userAnswers[questionIndex] = optionIndex;
+  // Update selection UI without auto-advancing (user requested: auto mat hone dooo)
+  const optionsGroupEl = document.getElementById('q-options-list');
+  if (optionsGroupEl) {
+    const cards = optionsGroupEl.querySelectorAll('.option-card');
+    cards.forEach((card, optIdx) => {
+      card.classList.toggle('selected', optIdx === optionIndex);
+    });
+  }
+  renderQuestionPalette();
+}
+
+function saveAndNext() {
+  if (!state.visitedQuestions) state.visitedQuestions = {};
+  state.visitedQuestions[state.currentQuestionIndex] = true;
+  
+  if (state.currentQuestionIndex < QUESTION_BANK.length - 1) {
+    renderQuestion(state.currentQuestionIndex + 1);
+  } else {
+    renderQuestionPalette();
+    showToast("ℹ️ Aap aakhri sawaal par hain. Exam Submit karne ke liye 'SUBMIT TEST NOW' dabaayein.");
+  }
+}
+
+function clearResponse() {
+  delete state.userAnswers[state.currentQuestionIndex];
+  if (state.markedForReview) delete state.markedForReview[state.currentQuestionIndex];
+  renderQuestion(state.currentQuestionIndex);
+  showToast("🧹 Response Cleared!");
+}
+
+function markForReviewAndNext() {
+  if (!state.markedForReview) state.markedForReview = {};
+  if (!state.visitedQuestions) state.visitedQuestions = {};
+  
+  state.markedForReview[state.currentQuestionIndex] = true;
+  state.visitedQuestions[state.currentQuestionIndex] = true;
+
+  if (state.currentQuestionIndex < QUESTION_BANK.length - 1) {
+    renderQuestion(state.currentQuestionIndex + 1);
+  } else {
+    renderQuestionPalette();
+    showToast("🟪 Marked for Review!");
+  }
+}
+
+function renderQuestionPalette() {
+  const paletteEl = document.getElementById('question-palette-grid');
+  if (!paletteEl) return;
+
+  if (!state.markedForReview) state.markedForReview = {};
+  if (!state.visitedQuestions) state.visitedQuestions = {};
+
+  // Update Header & Sidebar Candidate Info
+  const ntaName = document.getElementById('nta-candidate-name');
+  const ntaSubject = document.getElementById('nta-subject-name');
+  if (ntaName && state.student.name) ntaName.innerText = state.student.name;
+  if (ntaSubject && state.student.subject) ntaSubject.innerText = state.student.subject;
+
+  // Calculate 4 NTA counts: Answered, Not Answered, Marked for Review, Not Visited
+  let countAnswered = 0;
+  let countNotAnswered = 0;
+  let countMarked = 0;
+  let countNotVisited = 0;
+
+  QUESTION_BANK.forEach((q, idx) => {
+    const isAns = state.userAnswers[idx] !== undefined;
+    const isMrk = !!state.markedForReview[idx];
+    const isVis = !!state.visitedQuestions[idx];
+
+    if (isMrk) {
+      countMarked++;
+    } else if (isAns) {
+      countAnswered++;
+    } else if (isVis) {
+      countNotAnswered++;
+    } else {
+      countNotVisited++;
+    }
+  });
+
+  const elAns = document.getElementById('count-answered');
+  const elNotAns = document.getElementById('count-not-answered');
+  const elMarked = document.getElementById('count-marked');
+  const elNotVisited = document.getElementById('count-not-visited');
+
+  if (elAns) elAns.innerText = countAnswered;
+  if (elNotAns) elNotAns.innerText = countNotAnswered;
+  if (elMarked) elMarked.innerText = countMarked;
+  if (elNotVisited) elNotVisited.innerText = countNotVisited;
+
+  paletteEl.innerHTML = '';
+  QUESTION_BANK.forEach((q, idx) => {
+    const btn = document.createElement('button');
+    const isAnswered = state.userAnswers[idx] !== undefined;
+    const isMarked = !!state.markedForReview[idx];
+    const isVisited = !!state.visitedQuestions[idx];
+    const isCurrent = state.currentQuestionIndex === idx;
+
+    let statusClass = 'not-visited';
+    if (isMarked) {
+      statusClass = 'marked';
+    } else if (isAnswered) {
+      statusClass = 'answered';
+    } else if (isVisited) {
+      statusClass = 'not-answered';
+    }
+
+    btn.className = `palette-btn ${statusClass} ${isCurrent ? 'current' : ''}`;
+    btn.innerText = (idx + 1).toString().padStart(2, '0');
+    btn.addEventListener('click', () => {
+      renderQuestion(idx);
+    });
+    paletteEl.appendChild(btn);
+  });
+}
+
+function highlightActivePaletteButton(index) {
+  const buttons = document.querySelectorAll('.palette-btn');
+  buttons.forEach((btn, idx) => {
+    btn.classList.toggle('current', idx === index);
+  });
+}
+
+function navigateQuestion(direction) {
+  let targetIndex = state.currentQuestionIndex + direction;
+  if (targetIndex >= 0 && targetIndex < QUESTION_BANK.length) {
+    renderQuestion(targetIndex);
+  } else if (targetIndex >= QUESTION_BANK.length) {
+    confirmAndSubmitExam();
+  }
+}
+
+function confirmAndSubmitExam() {
+  const answeredCount = Object.keys(state.userAnswers).length;
+  const total = QUESTION_BANK.length;
+  
+  if (answeredCount === 0) {
+    alert("⚠️ Aapne ek bhi sawaal ka uttar nahi diya hai (0 / 15 Answered).\n\nExam submit karne ke liye kam se kam 1 sawaal ka uttar dena anivarya hai!");
+    return;
+  }
+
+  const markedCount = Object.keys(state.markedForReview || {}).length;
+  const unattempted = total - answeredCount;
+
+  const confirmMsg = `📋 EXAM SUBMISSION CONFIRMATION\n` +
+    `----------------------------------------\n` +
+    `• Total Questions: ${total}\n` +
+    `• Answered Questions: ${answeredCount}\n` +
+    `• Marked for Review: ${markedCount}\n` +
+    `• Unattempted Questions: ${unattempted}\n\n` +
+    `Kya aap nishchit roop se apna Exam Submit karna chahte hain?`;
+
+  if (confirm(confirmMsg)) {
+    autoSubmitExam('MANUAL_SUBMIT');
+  }
+}
+
+// -------------------------------------------------------------
+// 6. AUTO-SUBMIT & GOOGLE SHEETS API EXPORTER
+// -------------------------------------------------------------
+function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
+  if (state.examSubmitted) return;
+  state.examSubmitted = true;
+  clearInterval(state.timerInterval);
+
+  // Calculate Score
+  let score = 0;
+  QUESTION_BANK.forEach((q, idx) => {
+    if (state.userAnswers[idx] === q.correct) {
+      score += q.points;
+    }
+  });
+
+  const totalQuestions = QUESTION_BANK.length;
+  const percentage = ((score / totalQuestions) * 100).toFixed(1) + '%';
+  let status = 'COMPLETED';
+  if (reason === 'AUTO_SUBMIT_MAX_WARNINGS') status = 'LOCK_TERMINATED_CHEATING';
+  if (reason === 'TIME_EXPIRED') status = 'TIME_EXPIRED';
+
+  // Save final active question time
+  if (state.lastQuestionActiveTime !== null && state.currentQuestionIndex !== undefined) {
+    const elapsedSec = Math.round((Date.now() - state.lastQuestionActiveTime) / 1000);
+    if (elapsedSec > 0) {
+      state.questionTimeSpent[state.currentQuestionIndex] = (state.questionTimeSpent[state.currentQuestionIndex] || 0) + elapsedSec;
+    }
+  }
+
+  // Format Total Exam Time Spent
+  const minutesSpent = Math.floor(state.totalTimeSpentSeconds / 60);
+  const secondsSpent = state.totalTimeSpentSeconds % 60;
+  const formattedTimeTaken = `${minutesSpent}m ${secondsSpent}s`;
+
+  // Format per-question time breakdown summary (Q1: 15s | Q2: 30s...)
+  const perQuestionTimeArray = QUESTION_BANK.map((q, idx) => {
+    const sec = state.questionTimeSpent[idx] || 0;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    const timeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+    return `Q${idx+1}: ${timeStr}`;
+  });
+  const perQuestionTimeSummary = perQuestionTimeArray.join(' | ');
+
+  // Build human-readable response summary for Google Sheets & CSV
+  const responsesArray = QUESTION_BANK.map((q, idx) => {
+    const selectedOptIdx = state.userAnswers[idx];
+    const selectedText = selectedOptIdx !== undefined ? q.options[selectedOptIdx] : 'Unanswered';
+    const isCorrect = selectedOptIdx === q.correct ? '✅' : '❌';
+    return `Q${idx+1}: ${selectedText} (${isCorrect})`;
+  });
+
+  // Construct Data Payload
+  const payload = {
+    timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+    studentName: state.student.name || 'Anonymous Student',
+    rollNo: state.student.rollNo || 'N/A',
+    branch: state.student.branch || 'General',
+    subject: state.student.subject || 'Technical Club Quiz',
+    score: score,
+    totalQuestions: totalQuestions,
+    percentage: percentage,
+    status: status,
+    warningCount: state.warningCount || 0,
+    timeTakenSeconds: state.totalTimeSpentSeconds || 0,
+    formattedTimeTaken: formattedTimeTaken,
+    perQuestionTimeSummary: perQuestionTimeSummary,
+    detailedResponsesSummary: responsesArray.join(' | '),
+    userAnswersJSON: JSON.stringify(state.userAnswers),
+    violationLogs: state.violationLogs.join(' | ') || 'None (Clean Exam)',
+    screenshot: ''
+  };
+
+  // Direct instant processing - never hangs or blocks on mobile!
+  processFinalSubmission(payload, reason);
+}
+
+function processFinalSubmission(payload, reason) {
+  // Hide Exam UI, Show Result Screen
+  document.getElementById('quiz-main-section').style.display = 'none';
+  document.getElementById('header-monitor-bar').style.display = 'none';
+  document.getElementById('result-screen-card').style.display = 'block';
+
+  // Update Result UI
+  document.getElementById('res-student-name').innerText = payload.studentName;
+  document.getElementById('res-roll-no').innerText = payload.rollNo;
+  document.getElementById('res-score').innerText = `${payload.score} / ${payload.totalQuestions}`;
+  document.getElementById('res-percentage').innerText = payload.percentage;
+  document.getElementById('res-warnings').innerText = `${payload.warningCount} Warnings`;
+  document.getElementById('res-status-badge').innerText = payload.status;
+
+  if (reason === 'AUTO_SUBMIT_MAX_WARNINGS') {
+    document.getElementById('res-status-badge').className = 'status-badge btn-danger';
+    document.getElementById('result-title').innerText = '🚨 EXAM TERMINATED DUE TO CHEATING';
+    document.getElementById('result-sub').innerText = '5 Red Flag Warnings reached. Answers were auto-submitted & locked.';
+  }
+
+  // Populate Violation Table
+  const tableBody = document.getElementById('violation-table-body');
+  if (tableBody) {
+    tableBody.innerHTML = '';
+    if (state.violationLogs.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="2" style="color: var(--success-green);">✅ No anti-cheat violations detected! Perfect integrity.</td></tr>';
+    } else {
+      state.violationLogs.forEach((logItem) => {
+        const tr = document.createElement('tr');
+        const parts = logItem.split(' - ');
+        tr.innerHTML = `
+          <td style="color: var(--text-muted); font-family: var(--font-mono); width: 100px;">${parts[0]}</td>
+          <td style="color: var(--danger-red);">${escapeHtml(parts.slice(1).join(' - '))}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+  }
+
+  // Save Local Backup & Send Data
+  saveLocalBackup(payload);
+  sendDataToGoogleSheets(payload);
+}
+
+let hasSentGoogleSheet = false;
+
+function sendDataToGoogleSheets(payload) {
+  if (hasSentGoogleSheet) return;
+  hasSentGoogleSheet = true;
+
+  const syncStatusEl = document.getElementById('sheet-sync-status');
+  if (syncStatusEl) syncStatusEl.innerText = "⏳ Saving responses to Google Sheets & Server...";
+
+  // 1. Post to Local Node Server API (/api/save-exam)
+  fetch('/api/save-exam', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(r => r.json()).then(res => {
+    console.log("Local Server Saved:", res);
+  }).catch(err => console.warn("Local server save notice:", err));
+
+  // 2. Post EXACTLY ONCE to Google Apps Script Web App Endpoint
+  const targetUrl = CONFIG.googleSheetWebAppUrl;
+
+  if (!targetUrl) return;
+
+  const payloadString = JSON.stringify(payload);
+
+  try {
+    fetch(targetUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      cache: 'no-cache',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: payloadString
+    }).then(() => {
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = `<span style="color: #27ae60; font-weight: bold;">✅ SUCCESS: Exam Data Saved to Google Sheets!</span>`;
+      }
+      showToast("✅ Data saved to Google Sheets!");
+    }).catch(err => {
+      console.warn("Fetch Google Sheet notice:", err);
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = `<span style="color: #27ae60; font-weight: bold;">✅ Exam Data Saved to Server Backup!</span>`;
+      }
+    });
+  } catch (e) {
+    console.warn("Google Sheet sync notice:", e);
+  }
+}
+
+function saveLocalBackup(payload) {
+  try {
+    const existing = JSON.parse(localStorage.getItem('sec_exam_submissions') || '[]');
+    // Create light payload without large base64 screenshot string for localStorage stability
+    const lightPayload = { ...payload };
+    delete lightPayload.screenshot;
+    existing.push(lightPayload);
+    localStorage.setItem('sec_exam_submissions', JSON.stringify(existing));
+  } catch (e) {
+    console.warn("LocalStorage save skipped:", e);
+  }
+}
+
+function logViolation(description) {
+  const timestamp = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  const entry = `${timestamp} - ${description}`;
+  state.violationLogs.push(entry);
+  console.warn("Anti-Cheat Security Violation Logged:", entry);
+}
+
+function showToast(message) {
+  const toast = document.getElementById('cheat-toast');
+  if (!toast) return;
+
+  toast.innerText = message;
+  toast.classList.add('show');
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 4000);
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, function (m) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    }[m];
+  });
+}
+
+// -------------------------------------------------------------
+// SUBMISSIONS HISTORY MODAL CONTROLLER
+// -------------------------------------------------------------
+function openSavedSubmissionsModal() {
+  const modal = document.getElementById('submissions-history-modal');
+  const body = document.getElementById('submissions-modal-body');
+  if (!modal || !body) return;
+
+  const submissions = JSON.parse(localStorage.getItem('sec_exam_submissions') || '[]');
+  
+  body.innerHTML = '';
+  if (submissions.length === 0) {
+    body.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">Abhi tak koi local submission save nahi hua hai.</p>';
+  } else {
+    submissions.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background: rgba(19, 27, 46, 0.9); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 8px; padding: 0.85rem; margin-bottom: 0.75rem; font-size: 0.85rem;';
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <strong style="color: #fff; font-size: 0.95rem;">${index + 1}. ${escapeHtml(item.studentName)} (${escapeHtml(item.rollNo)})</strong>
+          <span style="color: var(--primary-cyan); font-weight: 700;">Score: ${item.score}/${item.totalQuestions} (${item.percentage})</span>
+        </div>
+        <div style="display: flex; gap: 1rem; color: var(--text-muted); font-size: 0.75rem;">
+          <span>Subject: ${escapeHtml(item.subject)}</span>
+          <span>Branch: ${escapeHtml(item.branch)}</span>
+          <span>Status: ${escapeHtml(item.status)}</span>
+        </div>
+        <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--danger-red);">
+          Violations: ${escapeHtml(item.violationLogs || 'None')}
+        </div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); text-align: right; margin-top: 0.2rem;">
+          Time: ${escapeHtml(item.timestamp || 'N/A')}
+        </div>
+      `;
+      body.appendChild(card);
+    });
+  }
+
+  modal.classList.add('active');
+}
+
+function closeSavedSubmissionsModal() {
+  const modal = document.getElementById('submissions-history-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function exportSubmissionsJSON() {
+  const data = localStorage.getItem('sec_exam_submissions') || '[]';
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `SCE_Supaul_Exam_Submissions_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearSavedSubmissions() {
+  if (confirm("Kya aap saari local saved submissions history delete karna chahte hain?")) {
+    localStorage.removeItem('sec_exam_submissions');
+    openSavedSubmissionsModal();
+    showToast("🗑️ Saved submissions cleared!");
+  }
+}

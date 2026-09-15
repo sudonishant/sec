@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1789461645643,
+    "receivedAt": "2026-09-15T08:40:45.643Z",
+    "timestamp": "15/9/2026, 2:10:45 pm",
+    "studentName": "nee",
+    "rollNo": "10000",
+    "branch": "Computer Science & Engineering (CSE)",
+    "subject": "Supaul College of Engineering - Technical Club Quiz",
+    "score": 7,
+    "totalQuestions": 15,
+    "percentage": "46.7%",
+    "status": "COMPLETED",
+    "warningCount": 0,
+    "timeTakenSeconds": 42,
+    "formattedTimeTaken": "0m 42s",
+    "perQuestionTimeSummary": "Q1: 4s | Q2: 5s | Q3: 5s | Q4: 3s | Q5: 2s | Q6: 2s | Q7: 2s | Q8: 2s | Q9: 5s | Q10: 2s | Q11: 2s | Q12: 2s | Q13: 2s | Q14: 2s | Q15: 5s",
+    "detailedResponsesSummary": "Q1: M. Visvesvaraya (✅) | Q2: Padma Shri (❌) | Q3: Krishna Raja Sagara (KRS) Dam (✅) | Q4: M. Visvesvaraya (❌) | Q5: Civil Engineering (❌) | Q6: 1945 (✅) | Q7: Power, Energy, Time (❌) | Q8: Vinod Khosla (✅) | Q9: Computer Automated Drawing (❌) | Q10: Graphene (✅) | Q11: 2015 (❌) | Q12: Newton's Second Law (❌) | Q13: Ampere (❌) | Q14: C / C++ (✅) | Q15: Digital automation with IoT, AI & Cyber-Physical Systems (✅)",
+    "userAnswersJSON": "{\"0\":1,\"1\":0,\"2\":2,\"3\":0,\"4\":1,\"5\":1,\"6\":1,\"7\":1,\"8\":2,\"9\":1,\"10\":2,\"11\":1,\"12\":1,\"13\":2,\"14\":2}",
+    "violationLogs": "14:10:01 - Exam Session Initiated & Fullscreen Activated",
+    "screenshot": ""
+  }
+]

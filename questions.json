@@ -22,9 +22,9 @@
   },
   {
     "id": 4,
-    "question": "Who is known as the 'Father of Indian Civil Engineering'?",
-    "options": ["M. Visvesvaraya", "Sir Arthur Cotton", "Jamsetji Tata", "Birbal Sahni"],
-    "correct": 1,
+    "question": "What does 'LED' stand for?",
+    "options": ["Light Emitting Diode", "Low Energy Display", "Light Energy Device", "Liquid Emitting Diode"],
+    "correct": 0,
     "points": 1
   },
   {
@@ -36,30 +36,30 @@
   },
   {
     "id": 6,
-    "question": "The first electronic general-purpose computer ENIAC was built in which year?",
-    "options": ["1936", "1945", "1952", "1960"],
-    "correct": 1,
+    "question": "What does 'WiFi' stand for?",
+    "options": ["Wireless Filing", "Wide Frequency Internet", "Wireless Fidelity", "Wire-Free Internet"],
+    "correct": 2,
     "points": 1
   },
   {
     "id": 7,
-    "question": "Ohm's Law states the relationship between which three quantities?",
-    "options": ["Voltage, Current, Resistance", "Power, Energy, Time", "Force, Mass, Acceleration", "Pressure, Volume, Temperature"],
-    "correct": 0,
-    "points": 1
-  },
-  {
-    "id": 8,
-    "question": "Which Indian engineer co-founded Sun Microsystems?",
-    "options": ["Sabeer Bhatia", "Vinod Khosla", "Narayan Murthy", "Azim Premji"],
+    "question": "How many bits are there in 1 Byte?",
+    "options": ["4", "8", "16", "32"],
     "correct": 1,
     "points": 1
   },
   {
+    "id": 8,
+    "question": "Which of the following is an input device?",
+    "options": ["Monitor", "Printer", "Speaker", "Keyboard"],
+    "correct": 3,
+    "points": 1
+  },
+  {
     "id": 9,
-    "question": "What does 'CAD' stand for in engineering design?",
-    "options": ["Computer Aided Design", "Central Application Data", "Computer Automated Drawing", "Circuit Analysis Design"],
-    "correct": 0,
+    "question": "What does 'UPS' stand for in computing and electronics?",
+    "options": ["Universal Power Supply", "Uninterruptible Power Supply", "Unified Protection System", "Unlimited Power Source"],
+    "correct": 1,
     "points": 1
   },
   {

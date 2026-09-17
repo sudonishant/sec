@@ -322,6 +322,23 @@ function checkDeviceLockout() {
   return false;
 }
 
+const MASTER_UNLOCK_PASSWORDS = ['sec@2026', 'sec@admin', 'sce@2026', 'admin123', 'supaul@sec'];
+
+function promptMasterUnlock() {
+  const enteredPass = prompt("🔐 ADMIN MASTER RESET\n\n1-Ghante ka device lockout reset karne ke liye Master Password darj karein:");
+  if (enteredPass === null) return; // User pressed Cancel
+
+  const trimmed = enteredPass.trim();
+  if (MASTER_UNLOCK_PASSWORDS.includes(trimmed)) {
+    localStorage.removeItem(LOCKOUT_KEY);
+    localStorage.removeItem(LAST_ATTEMPT_KEY);
+    alert("🔓 MASTER UNLOCK SUCCESSFUL!\n\nDevice lockout safaltapoorvak reset kar diya gaya hai.\nAb aap naya quiz attempt de sakte hain.");
+    location.reload();
+  } else {
+    alert("❌ ACCESS DENIED!\n\nGalat Master Password. Lockout reset nahi hua.");
+  }
+}
+
 function showLockoutScreen(remainingMs) {
   let lastAttempt = {};
   try {
@@ -347,7 +364,15 @@ function showLockoutScreen(remainingMs) {
       background: linear-gradient(135deg,#0a0e1a 0%,#131b2e 100%);
       font-family:'Segoe UI',sans-serif; text-align:center; padding:1.5rem;">
       
-      <div style="font-size:3.5rem; margin-bottom:0.25rem;">🔒</div>
+      <!-- Clickable Lock Emoji for Master Reset -->
+      <div id="master-lock-emoji" onclick="promptMasterUnlock()" style="
+        font-size:3.5rem; margin-bottom:0.25rem; cursor:pointer; user-select:none;
+        transition:transform 0.2s ease; display:inline-block;"
+        title="Admin Master Reset (Click to Unlock)"
+        onmouseover="this.style.transform='scale(1.2)'"
+        onmouseout="this.style.transform='scale(1)'">
+        🔒
+      </div>
       <h1 style="color:#e74c3c; font-size:1.85rem; margin-bottom:0.2rem; text-shadow:0 0 15px rgba(231,76,60,0.3);">
         Quiz Already Attempted!
       </h1>

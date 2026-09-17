@@ -51,7 +51,11 @@ let state = {
   candidatePhoto: null,
   isFaceVerified: false,
   cameraStream: null,
-  isPhoneLockActive: false
+  isPhoneLockActive: false,
+  violationEvidenceList: [],
+  currentEscapeStartTime: null,
+  totalTimeAwaySeconds: 0,
+  activeEvidenceItem: null
 };
 
 // Official Question Bank for Supaul College of Engineering - Technical Club (/15)
@@ -1180,11 +1184,85 @@ function isFullScreenActive() {
             document.msFullscreenElement);
 }
 
+function captureViolationSnapshot(reason) {
+  const video = document.getElementById('proctor-video-stream') || document.getElementById('face-video');
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;
+  canvas.height = 360;
+  const ctx = canvas.getContext('2d');
+
+  if (video && video.videoWidth) {
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 22px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🚨 RED FLAG VIOLATION', canvas.width / 2, canvas.height / 2 - 10);
+    ctx.textAlign = 'left';
+  }
+
+  // Red Header Alert
+  ctx.fillStyle = 'rgba(235, 87, 87, 0.9)';
+  ctx.fillRect(0, 0, canvas.width, 45);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 14px Arial';
+  ctx.fillText('🚨 ' + reason.substring(0, 48), 12, 28);
+
+  // Bottom Black Watermark
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+  ctx.fillRect(0, canvas.height - 32, canvas.width, 32);
+  ctx.fillStyle = '#00f2fe';
+  ctx.font = '12px monospace';
+  const timeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  ctx.fillText(`${state.student.name || 'Candidate'} (${state.student.rollNo || 'N/A'}) • ${timeStr}`, 12, canvas.height - 11);
+
+  return canvas.toDataURL('image/jpeg', 0.8);
+}
+
+function recordViolationEvidence(reason) {
+  const snapshot = captureViolationSnapshot(reason);
+  const timeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  const item = {
+    id: Date.now(),
+    time: timeStr,
+    reason: reason,
+    durationSec: 0,
+    snapshot: snapshot
+  };
+  state.violationEvidenceList.push(item);
+  state.activeEvidenceItem = item;
+  if (!state.currentEscapeStartTime) {
+    state.currentEscapeStartTime = Date.now();
+  }
+  return item;
+}
+
+function handleEscapeReturn() {
+  if (state.currentEscapeStartTime) {
+    const elapsedSec = Math.max(1, Math.round((Date.now() - state.currentEscapeStartTime) / 1000));
+    state.totalTimeAwaySeconds = (state.totalTimeAwaySeconds || 0) + elapsedSec;
+    if (state.activeEvidenceItem) {
+      state.activeEvidenceItem.durationSec = elapsedSec;
+    }
+    logViolation(`Returned to Exam window after ${elapsedSec}s escape/absence.`);
+    showToast(`⚠️ Aap ${elapsedSec}s ke liye exam se bahar the! (Time Logged)`);
+    state.currentEscapeStartTime = null;
+    state.activeEvidenceItem = null;
+  }
+}
+
 function handleFullScreenChange() {
   if (!state.examStarted || state.examSubmitted) return;
 
   if (!isFullScreenActive()) {
     // Student exited full screen!
+    recordViolationEvidence("Full Screen Exited / Escape Key Pressed");
     logViolation("Full Screen Exited / Escape Key Pressed");
     playBeepSound();
     
@@ -1196,6 +1274,7 @@ function handleFullScreenChange() {
     showToast("⚠️ FULLSCREEN EXIT DETECTED! Re-enter fullscreen immediately!");
   } else {
     // Re-entered full screen
+    handleEscapeReturn();
     const modal = document.getElementById('fullscreen-warning-modal');
     if (modal) {
       modal.classList.remove('active');
@@ -1211,20 +1290,24 @@ function handleVisibilityChange() {
 
   if (document.hidden || document.visibilityState === 'hidden') {
     document.body.classList.add('screen-blur-blackout');
+    recordViolationEvidence("Tab Switch / App in Background");
     registerTabSwitchViolation("Tab Switch / App Switched to Background");
   } else {
     document.body.classList.remove('screen-blur-blackout');
+    handleEscapeReturn();
   }
 }
 
 function handleWindowBlur() {
   if (!state.examStarted || state.examSubmitted) return;
   document.body.classList.add('screen-blur-blackout');
+  recordViolationEvidence("Window Lost Focus / Outside App Clicked");
   registerTabSwitchViolation("Window Lost Focus / External Application Activated");
 }
 
 window.addEventListener('focus', () => {
   document.body.classList.remove('screen-blur-blackout');
+  handleEscapeReturn();
 });
 
 function registerTabSwitchViolation(reason) {
@@ -1240,7 +1323,6 @@ function registerTabSwitchViolation(reason) {
   updateWarningUI();
 
   if (state.warningCount >= CONFIG.maxWarnings) {
-    // 5th Warning Reached: Lock Exam and Auto-Submit!
     showToast(`🚨 RED FLAG ${state.warningCount}/${CONFIG.maxWarnings}: MAX WARNINGS EXCEEDED! AUTO-SUBMITTING...`);
     setTimeout(() => {
       autoSubmitExam('AUTO_SUBMIT_MAX_WARNINGS');
@@ -1882,19 +1964,45 @@ function processFinalSubmission(payload, reason) {
     document.getElementById('result-sub').innerText = '5 Red Flag Warnings reached. Answers were auto-submitted & locked.';
   }
 
-  // Populate Violation Table
+  // Update Escape / Away Time & Evidence Count
+  const totalAwayEl = document.getElementById('res-total-away-time');
+  if (totalAwayEl) {
+    totalAwayEl.innerText = `${state.totalTimeAwaySeconds || 0}s`;
+  }
+  const evidenceCountEl = document.getElementById('res-evidence-count');
+  if (evidenceCountEl) {
+    evidenceCountEl.innerText = `${state.violationEvidenceList.length} Violations Captured`;
+  }
+
+  // Populate Enhanced Violation Table with Snapshots & Duration
   const tableBody = document.getElementById('violation-table-body');
   if (tableBody) {
     tableBody.innerHTML = '';
-    if (state.violationLogs.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="2" style="color: var(--success-green);">✅ No anti-cheat violations detected! Perfect integrity.</td></tr>';
+    if (state.violationEvidenceList.length === 0 && state.violationLogs.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="4" style="color: #27ae60; padding: 1rem; text-align:center; font-weight:bold;">✅ No anti-cheat violations detected! Perfect integrity.</td></tr>';
+    } else if (state.violationEvidenceList.length > 0) {
+      state.violationEvidenceList.forEach((ev) => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #dee2e6';
+        tr.innerHTML = `
+          <td style="padding: 0.6rem; color: #64748b; font-family: monospace; font-size: 0.8rem;">${ev.time}</td>
+          <td style="padding: 0.6rem; color: #d9534f; font-weight: 600;">${escapeHtml(ev.reason)}</td>
+          <td style="padding: 0.6rem; text-align: center; color: #e11d48; font-weight: bold; font-family: monospace;">
+            ${ev.durationSec > 0 ? `${ev.durationSec}s bahar raha` : 'Snapshot logged'}
+          </td>
+          <td style="padding: 0.4rem; text-align: center;">
+            <img src="${ev.snapshot}" onclick="openEvidenceLightbox('${ev.snapshot}')" style="width: 55px; height: 40px; object-fit: cover; border-radius: 4px; border: 1.5px solid #d9534f; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.15);" title="Click to enlarge" alt="Evidence">
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
     } else {
       state.violationLogs.forEach((logItem) => {
         const tr = document.createElement('tr');
         const parts = logItem.split(' - ');
         tr.innerHTML = `
-          <td style="color: var(--text-muted); font-family: var(--font-mono); width: 100px;">${parts[0]}</td>
-          <td style="color: var(--danger-red);">${escapeHtml(parts.slice(1).join(' - '))}</td>
+          <td style="padding: 0.6rem; color: #64748b; font-family: monospace;">${parts[0]}</td>
+          <td style="padding: 0.6rem; color: #d9534f;" colspan="3">${escapeHtml(parts.slice(1).join(' - '))}</td>
         `;
         tableBody.appendChild(tr);
       });
@@ -1904,6 +2012,15 @@ function processFinalSubmission(payload, reason) {
   // Save Local Backup & Send Data
   saveLocalBackup(payload);
   sendDataToGoogleSheets(payload);
+}
+
+function openEvidenceLightbox(src) {
+  const modal = document.getElementById('evidence-lightbox-modal');
+  const img = document.getElementById('lightbox-img');
+  if (modal && img) {
+    img.src = src;
+    modal.style.display = 'flex';
+  }
 }
 
 let hasSentGoogleSheet = false;

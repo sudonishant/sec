@@ -19,6 +19,12 @@ const CONFIG = {
   googleSheetWebAppUrl: 'https://script.google.com/macros/s/AKfycbzFyXEh_Tu49_ByjGx58jn5MMqmsbImXiSq_qmIqXNL5dxhbnRRVSShYBr8iIrcOJG2/exec',
   maxWarnings: 5,
   examDurationMinutes: 15,
+
+  // ── Quiz Scheduled Start Time ──────────────────────────────
+  // Format: 'YYYY-MM-DDTHH:MM:SS'  (24-hour, Local time IST)
+  // Set to null to disable time-lock (quiz always open)
+  // Example: '2026-09-17T10:00:00'  → quiz opens at 10:00 AM today
+  quizStartTime: '2026-09-17T10:00:00',
 };
 
 // Exam State
@@ -227,9 +233,114 @@ function showLockoutScreen(remainingMs) {
 }
 
 // Initialize System on DOM Load
+// ─────────────────────────────────────────────────────────────
+// QUIZ SCHEDULED START TIME CHECK
+// ─────────────────────────────────────────────────────────────
+function checkQuizStartTime() {
+  if (!CONFIG.quizStartTime) return false; // no time set → always open
+
+  const startTime = new Date(CONFIG.quizStartTime).getTime();
+  const now = Date.now();
+
+  if (now < startTime) {
+    showWaitingScreen(startTime);
+    return true; // not yet started
+  }
+  return false; // quiz is open
+}
+
+function showWaitingScreen(startTimestamp) {
+  const startDate = new Date(startTimestamp);
+  const dateStr = startDate.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+  const timeStr = startDate.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+
+  document.body.innerHTML = `
+    <div style="
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      background: linear-gradient(135deg,#0a0e1a 0%,#131b2e 100%);
+      font-family:'Segoe UI',sans-serif; text-align:center; padding:2rem;">
+
+      <div style="font-size:4rem; margin-bottom:1rem;">⏳</div>
+
+      <h1 style="
+        color:#00f2fe; font-size:2rem; margin-bottom:0.4rem;
+        text-shadow: 0 0 20px rgba(0,242,254,0.4);">
+        Quiz Abhi Shuru Nahi Hua!
+      </h1>
+      <p style="color:#aab4c8; font-size:1rem; margin-bottom:2rem;">
+        SCE Supaul — Engineers' Day Quiz 2026
+      </p>
+
+      <div style="
+        background:rgba(0,242,254,0.07); border:1px solid rgba(0,242,254,0.3);
+        border-radius:16px; padding:1.5rem 2.5rem; margin-bottom:2rem;">
+        <div style="color:#aab4c8; font-size:0.85rem; margin-bottom:0.3rem;">Quiz Start Hoga:</div>
+        <div style="color:#fff; font-size:1.2rem; font-weight:600;">
+          📅 ${dateStr} &nbsp;|&nbsp; 🕐 ${timeStr}
+        </div>
+      </div>
+
+      <div style="
+        background:rgba(0,0,0,0.4); border:2px solid rgba(0,242,254,0.4);
+        border-radius:20px; padding:2rem 3rem;">
+        <div style="color:#aab4c8; font-size:0.9rem; margin-bottom:0.8rem; letter-spacing:1px;">
+          SHURU HONE MEIN BAAKI:
+        </div>
+        <div id="start-countdown" style="
+          display:flex; gap:1.5rem; justify-content:center; align-items:center;">
+          <div class="cblock">
+            <div id="cd-h" style="font-size:3rem;font-weight:700;color:#00f2fe;font-family:monospace;min-width:70px;">00</div>
+            <div style="color:#555e70;font-size:0.75rem;letter-spacing:2px;">GHANTE</div>
+          </div>
+          <div style="font-size:3rem;color:#00f2fe;font-weight:700;margin-bottom:18px;">:</div>
+          <div class="cblock">
+            <div id="cd-m" style="font-size:3rem;font-weight:700;color:#00f2fe;font-family:monospace;min-width:70px;">00</div>
+            <div style="color:#555e70;font-size:0.75rem;letter-spacing:2px;">MINUTE</div>
+          </div>
+          <div style="font-size:3rem;color:#00f2fe;font-weight:700;margin-bottom:18px;">:</div>
+          <div class="cblock">
+            <div id="cd-s" style="font-size:3rem;font-weight:700;color:#00f2fe;font-family:monospace;min-width:70px;">00</div>
+            <div style="color:#555e70;font-size:0.75rem;letter-spacing:2px;">SECOND</div>
+          </div>
+        </div>
+      </div>
+
+      <p style="color:#555e70; font-size:0.8rem; margin-top:2rem;">
+        🔄 Page automatically refresh hoga jab quiz shuru hoga.
+      </p>
+    </div>
+  `;
+
+  // Live countdown tick
+  function tick() {
+    const left = Math.max(0, startTimestamp - Date.now());
+    const h = Math.floor(left / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    const s = Math.floor((left % 60000) / 1000);
+
+    const elH = document.getElementById('cd-h');
+    const elM = document.getElementById('cd-m');
+    const elS = document.getElementById('cd-s');
+    if (elH) elH.innerText = String(h).padStart(2,'0');
+    if (elM) elM.innerText = String(m).padStart(2,'0');
+    if (elS) elS.innerText = String(s).padStart(2,'0');
+
+    if (left <= 0) {
+      location.reload(); // Quiz time aa gaya — reload!
+      return;
+    }
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Device lockout check FIRST ──
-  if (checkDeviceLockout()) return; // show block screen, stop everything
+  // ── 1. Quiz start time check FIRST ──
+  if (checkQuizStartTime()) return;
+
+  // ── 2. Device lockout check ──
+  if (checkDeviceLockout()) return;
 
   // Fetch dynamic question bank if available
   fetch('/api/questions')

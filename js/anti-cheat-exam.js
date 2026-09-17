@@ -1744,74 +1744,118 @@ function setupAntiCheatListeners() {
     }
   });
 
-  // Block Keyboard Shortcuts (PrtScn, F12, Ctrl+C, Ctrl+V, Ctrl+P, Ctrl+U, Ctrl+Shift+I, Alt+Tab)
-  document.addEventListener('keydown', (e) => {
+  // Block Keyboard & Mobile Hardware Shortcuts (PrtScn, Hardware Volume Keys, Snipping, F12, Ctrl+C/V/P/U/S/A)
+  const isScreenshotKey = (e) => {
+    const key = e.key || e.code || '';
+    const keyCode = e.keyCode || e.which || 0;
+    const ctrl = e.ctrlKey || e.metaKey;
+    const shift = e.shiftKey;
+
+    // 1. Mobile Hardware Buttons (Volume Down, Volume Up, Mute, Power, Camera, Snapshot)
+    // On Android, Power + Volume Down triggers AudioVolumeDown key event immediately
+    if (
+      key === 'AudioVolumeDown' || key === 'VolumeDown' || keyCode === 174 || keyCode === 25 ||
+      key === 'AudioVolumeUp' || key === 'VolumeUp' || keyCode === 175 || keyCode === 24 ||
+      key === 'AudioVolumeMute' || key === 'VolumeMute' || keyCode === 173 || keyCode === 164 ||
+      key === 'Power' || keyCode === 26 ||
+      key === 'Camera' || keyCode === 27 ||
+      key === 'Snapshot'
+    ) {
+      return 'Mobile Hardware Button (Volume/Power/Camera)';
+    }
+
+    // 2. PrintScreen Key
+    if (key === 'PrintScreen' || e.code === 'PrintScreen' || keyCode === 44) {
+      return 'PrintScreen Key Pressed';
+    }
+
+    // 3. Windows Snipping Tool (Win + Shift + S or Ctrl + Shift + S)
+    if ((ctrl || e.metaKey) && shift && (key === 's' || key === 'S' || e.code === 'KeyS')) {
+      return 'Snipping Tool Shortcut (Win/Ctrl+Shift+S)';
+    }
+
+    // 4. macOS Screenshot Shortcuts (Cmd + Shift + 3 / 4 / 5)
+    if (e.metaKey && shift && (key === '3' || key === '4' || key === '5' || e.code === 'Digit3' || e.code === 'Digit4' || e.code === 'Digit5')) {
+      return 'macOS Screenshot Shortcut (Cmd+Shift+3/4/5)';
+    }
+
+    // 5. Page Print / PDF Export (Ctrl + P / Cmd + P)
+    if (ctrl && (key === 'p' || key === 'P' || e.code === 'KeyP')) {
+      return 'Page Print Shortcut (Ctrl+P)';
+    }
+
+    return null;
+  };
+
+  const handleKeyDown = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
+
+    const screenshotReason = isScreenshotKey(e);
+    if (screenshotReason) {
+      e.preventDefault();
+      e.stopPropagation();
+      triggerScreenshotProtection(screenshotReason);
+      return false;
+    }
 
     const key = e.key || e.code;
     const ctrl = e.ctrlKey || e.metaKey;
     const shift = e.shiftKey;
 
-    // 1. Block PrintScreen Key
-    if (key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44) {
-      e.preventDefault();
-      triggerScreenshotProtection("PrintScreen Key Pressed");
-      return false;
-    }
-
-    // 2. Block Windows Snipping Tool (Win + Shift + S or Ctrl + Shift + S)
-    if ((ctrl || e.metaKey) && shift && (key === 's' || key === 'S' || e.code === 'KeyS')) {
-      e.preventDefault();
-      triggerScreenshotProtection("Snipping Tool Shortcut (Win/Ctrl+Shift+S)");
-      return false;
-    }
-
-    // 3. Block macOS Screenshot Shortcuts (Cmd + Shift + 3 / 4 / 5)
-    if (e.metaKey && shift && (key === '3' || key === '4' || key === '5' || e.code === 'Digit3' || e.code === 'Digit4' || e.code === 'Digit5')) {
-      e.preventDefault();
-      triggerScreenshotProtection("macOS Screenshot Shortcut (Cmd+Shift+3/4/5)");
-      return false;
-    }
-
-    // 4. Block Page Print / PDF Export (Ctrl + P / Cmd + P)
-    if (ctrl && (key === 'p' || key === 'P' || e.code === 'KeyP')) {
-      e.preventDefault();
-      triggerScreenshotProtection("Page Print Shortcut (Ctrl+P)");
-      return false;
-    }
-
-    // 5. Block F12 (DevTools)
+    // Block F12 (DevTools)
     if (key === 'F12' || e.keyCode === 123) {
       e.preventDefault();
+      e.stopPropagation();
       showToast("🚫 Developer Tools (F12) Disabled!");
       logViolation("Attempted Developer Tools (F12)");
       return false;
     }
 
-    // 6. Block Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+U (View Source), Ctrl+S (Save), Ctrl+A (Select All)
+    // Block Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+U (View Source), Ctrl+S (Save), Ctrl+A (Select All)
     if (ctrl && (key === 'c' || key === 'C' || key === 'v' || key === 'V' || key === 'u' || key === 'U' || key === 's' || key === 'S' || key === 'a' || key === 'A')) {
       e.preventDefault();
+      e.stopPropagation();
       showToast(`❌ Shortcut Ctrl+${key.toUpperCase()} Disabled!`);
       logViolation(`Attempted Shortcut Ctrl+${key.toUpperCase()}`);
       return false;
     }
 
-    // 7. Block DevTools Shortcuts: Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+    // Block DevTools Shortcuts: Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
     if (ctrl && shift && (key === 'I' || key === 'i' || key === 'J' || key === 'j' || key === 'C' || key === 'c')) {
       e.preventDefault();
+      e.stopPropagation();
       showToast("🚫 Inspect Element Disabled!");
       logViolation("Attempted Inspect Element Shortcut");
       return false;
     }
-  });
+  };
 
-  // Secondary PrintScreen release listener (in case OS swallowed keydown)
-  window.addEventListener('keyup', (e) => {
+  document.addEventListener('keydown', handleKeyDown, { capture: true });
+  window.addEventListener('keydown', handleKeyDown, { capture: true });
+
+  // Secondary key release listener for OS hardware keys (Volume/Power/PrtScn)
+  const handleKeyUp = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
-    const key = e.key || e.code;
-    if (key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44) {
+    const screenshotReason = isScreenshotKey(e);
+    if (screenshotReason) {
       e.preventDefault();
-      triggerScreenshotProtection("PrintScreen Key Released (Screenshot Detected)");
+      e.stopPropagation();
+      triggerScreenshotProtection(`${screenshotReason} Released`);
+    }
+  };
+  document.addEventListener('keyup', handleKeyUp, { capture: true });
+  window.addEventListener('keyup', handleKeyUp, { capture: true });
+
+  // Additional focus/visibility listeners for mobile notification shade / quick settings
+  window.addEventListener('focusout', handleWindowBlur);
+  window.addEventListener('pagehide', handleWindowBlur);
+  document.addEventListener('freeze', handleWindowBlur);
+
+  // Detect split-screen or external overlay resize on mobile
+  window.addEventListener('resize', () => {
+    if (!state.examStarted || state.examSubmitted) return;
+    if (window.innerHeight < 280 || window.innerWidth < 280) {
+      triggerScreenshotProtection("Split-Screen / Floating Window Detected");
     }
   });
 
@@ -1833,15 +1877,20 @@ function setupAntiCheatListeners() {
     });
   });
 
-  // Mobile Screenshot Gesture Protection (3-finger swipe, palm swipe, multi-touch capture)
-  window.addEventListener('touchstart', (e) => {
+  // Mobile Screenshot Gesture Protection (3-finger swipe, palm swipe, 2+ touches)
+  const blockMultiTouch = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
     if (e.touches && e.touches.length >= 2) {
       e.preventDefault();
       e.stopPropagation();
       triggerScreenshotProtection("Multi-touch Gesture / 3-Finger Screenshot Blocked");
+      return false;
     }
-  }, { capture: true, passive: false });
+  };
+  window.addEventListener('touchstart', blockMultiTouch, { capture: true, passive: false });
+  window.addEventListener('touchmove', blockMultiTouch, { capture: true, passive: false });
+  document.addEventListener('touchstart', blockMultiTouch, { capture: true, passive: false });
+  document.addEventListener('touchmove', blockMultiTouch, { capture: true, passive: false });
 
   // Continuous Clipboard Sanitizer during active exam
   setInterval(() => {
@@ -1886,7 +1935,7 @@ function playBeepSound() {
 }
 
 // -------------------------------------------------------------
-// 4. DYNAMIC FLOATING WATERMARK
+// 4. DYNAMIC FLOATING & GRID WATERMARK (ANTI-CAMERA / ANTI-OCR)
 // -------------------------------------------------------------
 function startDynamicWatermark() {
   const container = document.getElementById('dynamic-watermark-container');
@@ -1894,12 +1943,26 @@ function startDynamicWatermark() {
 
   container.innerHTML = '';
   
-  // Create 3 floating watermark elements that bounce smoothly across screen
+  const studentRoll = state.student.rollNo || 'CONFIDENTIAL';
+  const studentName = state.student.name || 'STUDENT CANDIDATE';
+  const label = `${studentRoll} • ${studentName} • SEC SUPAUL EXAM LOCK • STRICTLY CONFIDENTIAL`;
+
+  // 1. Repeating full-screen watermark grid (Anti-Camera / Anti-OCR protection)
+  const gridOverlay = document.createElement('div');
+  gridOverlay.className = 'watermark-grid-overlay';
+  let gridRows = '';
+  for (let r = 0; r < 14; r++) {
+    gridRows += `<div class="watermark-grid-row">${label} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${label}</div>`;
+  }
+  gridOverlay.innerHTML = gridRows;
+  container.appendChild(gridOverlay);
+
+  // 2. Create 3 floating watermark elements that bounce smoothly across screen
   for (let i = 0; i < 3; i++) {
     const wm = document.createElement('div');
     wm.className = 'watermark-text';
     wm.id = `watermark-${i}`;
-    wm.innerText = `${state.student.rollNo} • ${state.student.name} • SCE SUPAUL EXAM LOCK • ${state.student.branch}`;
+    wm.innerText = `${studentRoll} • ${studentName} • SEC SUPAUL • ${state.student.branch || 'EXAM'}`;
     container.appendChild(wm);
     
     animateWatermark(wm, i);

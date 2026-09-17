@@ -301,9 +301,11 @@ function showTimeMismatchScreen(deviceMs, networkMs, driftSeconds) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
 // DEVICE LOCKOUT — 1 attempt per device per hour
 // ─────────────────────────────────────────────────────────────
 const LOCKOUT_KEY = 'sec_quiz_submitted_at';
+const LAST_ATTEMPT_KEY = 'sec_quiz_last_attempt';
 const LOCKOUT_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 function checkDeviceLockout() {
@@ -321,29 +323,97 @@ function checkDeviceLockout() {
 }
 
 function showLockoutScreen(remainingMs) {
-  // Hide all normal content
+  let lastAttempt = {};
+  try {
+    lastAttempt = JSON.parse(localStorage.getItem(LAST_ATTEMPT_KEY) || '{}');
+  } catch (e) {
+    console.warn("Could not parse last attempt info:", e);
+  }
+
+  const studentName = lastAttempt.studentName || 'Candidate';
+  const rollNo = lastAttempt.rollNo || 'N/A';
+  const branch = lastAttempt.branch || '';
+  const score = lastAttempt.score !== undefined ? lastAttempt.score : '--';
+  const totalQuestions = lastAttempt.totalQuestions || 15;
+  const percentage = lastAttempt.percentage || '0%';
+  const photoSrc = lastAttempt.candidatePhoto || '';
+  const timeTaken = lastAttempt.formattedTimeTaken || 'N/A';
+
+  // Hide all normal content & render Previous Attempt Result + Lockout
   document.body.innerHTML = `
     <div id="lockout-screen" style="
       min-height:100vh; display:flex; flex-direction:column;
       align-items:center; justify-content:center;
       background: linear-gradient(135deg,#0a0e1a 0%,#131b2e 100%);
-      font-family:'Segoe UI',sans-serif; text-align:center; padding:2rem;">
-      <div style="font-size:4rem; margin-bottom:1rem;">🔒</div>
-      <h1 style="color:#e74c3c; font-size:2rem; margin-bottom:0.5rem;">Quiz Already Attempted!</h1>
-      <p style="color:#aab4c8; font-size:1.1rem; max-width:480px; line-height:1.6;">
-        Aapne is device se quiz pehle de chuke hain.<br>
-        Ek ghante mein sirf <strong style="color:#00f2fe;">1 baar</strong> quiz diya ja sakta hai.
+      font-family:'Segoe UI',sans-serif; text-align:center; padding:1.5rem;">
+      
+      <div style="font-size:3.5rem; margin-bottom:0.25rem;">🔒</div>
+      <h1 style="color:#e74c3c; font-size:1.85rem; margin-bottom:0.2rem; text-shadow:0 0 15px rgba(231,76,60,0.3);">
+        Quiz Already Attempted!
+      </h1>
+      <p style="color:#aab4c8; font-size:0.95rem; max-width:480px; line-height:1.4; margin-bottom:1.5rem;">
+        Is device se quiz pehle diya ja chuka hai.<br>
+        Security niyam anusar ek device se 1 ghante me sirf <strong style="color:#00f2fe;">1 baar</strong> quiz de sakte hain.
       </p>
+
+      <!-- Previous Attempt Card with Real Photo & Score -->
       <div style="
-        margin-top:2rem; padding:1.5rem 3rem;
-        background:rgba(231,76,60,0.12); border:2px solid #e74c3c;
-        border-radius:16px;">
-        <div style="color:#aab4c8; font-size:0.9rem; margin-bottom:0.4rem;">Dobara kholne ka samay:</div>
-        <div id="lockout-countdown" style="
-          font-size:2.5rem; font-weight:700; letter-spacing:4px;
-          color:#00f2fe; font-family:monospace;">--:--:--</div>
+        background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(0, 242, 254, 0.3);
+        border-radius: 16px; padding: 1.4rem; max-width: 440px; width: 100%;
+        margin-bottom: 1.5rem; box-shadow: 0 8px 30px rgba(0,0,0,0.4); text-align: center;">
+
+        <div style="color:#00f2fe; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.85rem;">
+          📋 Aapka Pichhla (Previous) Result
+        </div>
+
+        <!-- Verified Face Photo -->
+        ${photoSrc ? `
+          <div style="width: 90px; height: 90px; margin: 0 auto 0.75rem auto; border-radius: 50%; overflow: hidden; border: 3px solid #00f2fe; box-shadow: 0 0 15px rgba(0,242,254,0.4);">
+            <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" alt="Candidate Photo">
+          </div>
+        ` : `
+          <div style="width: 70px; height: 70px; margin: 0 auto 0.75rem auto; border-radius: 50%; background: #003366; display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 2px solid #0275d8;">
+            👤
+          </div>
+        `}
+
+        <div style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.15rem;">
+          ${escapeHtml(studentName)}
+        </div>
+        <div style="color: #aab4c8; font-size: 0.85rem; margin-bottom: 1rem;">
+          Roll: <strong style="color: #fff;">${escapeHtml(rollNo)}</strong> ${branch ? `| ${escapeHtml(branch)}` : ''}
+        </div>
+
+        <!-- Previous Score Stats Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(0, 0, 0, 0.45); border-radius: 12px; padding: 0.85rem;">
+          <div style="border-right: 1px solid rgba(255,255,255,0.1);">
+            <div style="color: #aab4c8; font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Previous Score</div>
+            <div style="color: #2ecc71; font-size: 1.6rem; font-weight: 900; font-family: monospace; margin-top: 2px;">
+              ${score} / ${totalQuestions}
+            </div>
+            <div style="color: #2ecc71; font-size: 0.75rem; font-weight: bold;">${percentage}</div>
+          </div>
+          <div>
+            <div style="color: #aab4c8; font-size: 0.72rem; text-transform: uppercase; font-weight: 600;">Time Taken</div>
+            <div style="color: #00f2fe; font-size: 1.3rem; font-weight: 800; font-family: monospace; margin-top: 4px;">
+              ${timeTaken}
+            </div>
+            <div style="color: #aab4c8; font-size: 0.72rem; margin-top: 3px;">Completed ✅</div>
+          </div>
+        </div>
       </div>
-      <p style="color:#555e70; font-size:0.85rem; margin-top:2rem;">
+
+      <!-- Live Lockout Countdown Card -->
+      <div style="
+        padding: 1.1rem 2rem; background: rgba(231,76,60,0.12); border: 2px solid #e74c3c;
+        border-radius: 16px; max-width: 440px; width: 100%;">
+        <div style="color: #aab4c8; font-size: 0.82rem; margin-bottom: 0.3rem;">Dobara Test Dene Ka Samay:</div>
+        <div id="lockout-countdown" style="
+          font-size: 2.3rem; font-weight: 700; letter-spacing: 4px;
+          color: #00f2fe; font-family: monospace;">--:--:--</div>
+      </div>
+
+      <p style="color: #555e70; font-size: 0.8rem; margin-top: 1.5rem;">
         SCE Supaul — Anti-Cheat Exam Portal
       </p>
     </div>
@@ -1471,9 +1541,6 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
   state.examSubmitted = true;
   clearInterval(state.timerInterval);
 
-  // ── Save device lockout timestamp (1-hour block) ──
-  localStorage.setItem(LOCKOUT_KEY, Date.now().toString());
-
   // Calculate Score
   let score = 0;
   QUESTION_BANK.forEach((q, idx) => {
@@ -1500,6 +1567,26 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
   const minutesSpent = Math.floor(state.totalTimeSpentSeconds / 60);
   const secondsSpent = state.totalTimeSpentSeconds % 60;
   const formattedTimeTaken = `${minutesSpent}m ${secondsSpent}s`;
+
+  // ── Save device lockout & previous attempt details (1-hour block) ──
+  const attemptInfo = {
+    submittedAt: getSyncedNow(),
+    studentName: state.student.name || 'Candidate',
+    rollNo: state.student.rollNo || 'N/A',
+    branch: state.student.branch || '',
+    score: score,
+    totalQuestions: totalQuestions,
+    percentage: percentage,
+    candidatePhoto: state.candidatePhoto || '',
+    formattedTimeTaken: formattedTimeTaken,
+    status: status
+  };
+  try {
+    localStorage.setItem(LAST_ATTEMPT_KEY, JSON.stringify(attemptInfo));
+    localStorage.setItem(LOCKOUT_KEY, attemptInfo.submittedAt.toString());
+  } catch (e) {
+    console.warn("Error saving lockout attempt info:", e);
+  }
 
   // Format per-question time breakdown summary (Q1: 15s | Q2: 30s...)
   const perQuestionTimeArray = QUESTION_BANK.map((q, idx) => {

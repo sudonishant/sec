@@ -1851,6 +1851,13 @@ function setupAntiCheatListeners() {
   window.addEventListener('pagehide', handleWindowBlur);
   document.addEventListener('freeze', handleWindowBlur);
 
+  // Standard NoPrint.js AutoBlur: Protects screen if cursor leaves viewport to activate capture tools
+  document.addEventListener('mouseleave', () => {
+    if (state.examStarted && !state.examSubmitted) {
+      handleWindowBlur();
+    }
+  });
+
   // Detect split-screen or external overlay resize on mobile
   window.addEventListener('resize', () => {
     if (!state.examStarted || state.examSubmitted) return;
@@ -1992,75 +1999,6 @@ function animateWatermark(el, index) {
 }
 
 // -------------------------------------------------------------
-// 4.5 MOBILE DRM ANTI-SCREENSHOT SHUTTER
-// -------------------------------------------------------------
-function setupMobileDrmShutter() {
-  const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 900);
-  if (!isTouchDevice) return;
-
-  const drmCover = document.getElementById('mobile-drm-blackout-cover');
-  const questionBox = document.querySelector('.question-box');
-  if (!drmCover || !questionBox) return;
-
-  let releaseTimer = null;
-
-  // Initially show blackout shield on mobile
-  drmCover.style.display = 'flex';
-
-  const showQuestion = () => {
-    if (!state.examStarted || state.examSubmitted || state.isPhoneLockActive) return;
-    if (releaseTimer) {
-      clearTimeout(releaseTimer);
-      releaseTimer = null;
-    }
-    drmCover.style.display = 'none';
-  };
-
-  const hideQuestion = () => {
-    if (!state.examStarted || state.examSubmitted) return;
-    if (releaseTimer) clearTimeout(releaseTimer);
-    // 120ms debounce: allows seamless option selection and scrolling,
-    // but when hands leave screen to press Power + Volume Down (takes 300-500ms),
-    // the question card turns 100% PITCH BLACK before the hardware screenshot captures!
-    releaseTimer = setTimeout(() => {
-      if (!state.examSubmitted && state.examStarted && !state.isPhoneLockActive) {
-        drmCover.style.display = 'flex';
-      }
-    }, 120);
-  };
-
-  // Touch handlers on questionBox
-  questionBox.addEventListener('touchstart', (e) => {
-    if (e.touches && e.touches.length === 1) {
-      showQuestion();
-    } else if (e.touches && e.touches.length >= 2) {
-      hideQuestion();
-      triggerScreenshotProtection("Multi-touch Gesture / Screenshot Swipe Blocked");
-    }
-  }, { passive: true, capture: true });
-
-  questionBox.addEventListener('touchmove', (e) => {
-    if (e.touches && e.touches.length === 1) {
-      showQuestion();
-    }
-  }, { passive: true });
-
-  questionBox.addEventListener('touchend', hideQuestion, { passive: true });
-  questionBox.addEventListener('touchcancel', hideQuestion, { passive: true });
-
-  // Pointer events fallback for Android Chrome & iOS Safari
-  questionBox.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'touch') showQuestion();
-  });
-  questionBox.addEventListener('pointerup', (e) => {
-    if (e.pointerType === 'touch') hideQuestion();
-  });
-  questionBox.addEventListener('pointercancel', (e) => {
-    if (e.pointerType === 'touch') hideQuestion();
-  });
-}
-
-// -------------------------------------------------------------
 // 5. EXAM ENGINE & QUIZ FLOW
 // -------------------------------------------------------------
 function startExamProcess() {
@@ -2122,9 +2060,6 @@ function startExamProcess() {
   // Render Questions & Palette
   renderQuestion(0);
   renderQuestionPalette();
-
-  // Initialize Mobile DRM Anti-Screenshot Shutter
-  setupMobileDrmShutter();
 
   logViolation("Exam Session Initiated & Fullscreen Activated");
   showToast("🛡️ Anti-Cheat Security System Active! Best of Luck.");

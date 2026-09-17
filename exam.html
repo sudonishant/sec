@@ -51,6 +51,11 @@
         Red Flags: <span id="warning-count-text" style="font-size: 0.9rem;">0 / 5</span>
         <div class="warning-dots" id="warning-dots-bar" style="margin-top: 3px;"></div>
       </div>
+      <!-- Live AI Proctor Selfie Camera Feed -->
+      <div style="display: flex; flex-direction: column; align-items: center; border-left: 1px solid #ccc; padding-left: 0.75rem;">
+        <video id="proctor-video-stream" autoplay playsinline muted style="width: 44px; height: 34px; border-radius: 4px; object-fit: cover; border: 1.5px solid #00f2fe; background: #000; transform: scaleX(-1); display: block;" title="🟢 AI Live Camera Active"></video>
+        <span style="font-size: 0.65rem; color: #00a8ff; font-weight: bold; margin-top: 2px;">🟢 AI Watch</span>
+      </div>
     </div>
   </header>
 
@@ -334,14 +339,62 @@
     </div>
   </div>
 
+  <!-- Secondary Phone / Cheating Device Detected Modal Overlay -->
+  <div class="security-modal-overlay" id="phone-detected-modal" style="display: none; position: fixed; inset: 0; background: rgba(10, 14, 26, 0.96); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(8px); padding: 1rem;">
+    <div class="modal-content-box" style="background: #131b2e; border: 2px solid #eb5757; border-radius: 12px; max-width: 480px; width: 100%; padding: 1.75rem; text-align: center; box-shadow: 0 0 35px rgba(235, 87, 87, 0.5); color: #fff;">
+      
+      <div style="font-size: 3.2rem; margin-bottom: 0.5rem; animation: pulse 1s infinite;">🚨</div>
+      
+      <h2 style="color: #ff4757; font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem; text-shadow: 0 0 15px rgba(255, 71, 87, 0.4);">
+        EXAM LOCKED: SECONDARY PHONE DETECTED!
+      </h2>
+      
+      <p style="color: #aab4c8; font-size: 0.88rem; line-height: 1.4; margin-bottom: 1rem;">
+        Selfie camera ne screen ke samne <strong>Dusra Mobile Phone / Camera</strong> detect kiya hai! Exam turant lock kar diya gaya hai.
+      </p>
+
+      <!-- Captured Violation Evidence Photo -->
+      <div style="background: rgba(0, 0, 0, 0.6); border: 2px solid #ff4757; border-radius: 8px; overflow: hidden; margin-bottom: 1.25rem;">
+        <div style="background: #ff4757; color: #fff; font-size: 0.72rem; font-weight: bold; padding: 0.25rem 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
+          📸 Captured Violation Evidence Snapshot
+        </div>
+        <img id="phone-violation-img" src="" style="width: 100%; max-height: 200px; object-fit: cover; display: block;" alt="Violation Evidence">
+        <div id="phone-violation-time" style="font-size: 0.72rem; color: #ff6b81; font-family: monospace; padding: 0.35rem 0.5rem; text-align: right;">
+          Timestamp: --
+        </div>
+      </div>
+
+      <!-- Master Password Input Form -->
+      <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; text-align: left;">
+        <label style="color: #00f2fe; font-size: 0.82rem; font-weight: bold; display: block; margin-bottom: 0.4rem;">
+          🔑 Invigilator / Admin Master Password:
+        </label>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="password" id="phone-master-pass-input" placeholder="Enter Master Password" style="flex: 1; padding: 0.65rem 0.85rem; border-radius: 4px; border: 1px solid #00f2fe; background: #0a0e1a; color: #fff; font-size: 0.9rem; outline: none;">
+          <button type="button" onclick="unlockPhoneViolation()" style="background: #27ae60; color: #fff; border: none; padding: 0.65rem 1.2rem; border-radius: 4px; font-weight: bold; font-size: 0.88rem; cursor: pointer;">
+            🔓 Unlock
+          </button>
+        </div>
+        <div id="phone-unlock-error" style="color: #ff4757; font-size: 0.78rem; margin-top: 0.4rem; display: none;">
+          ❌ Galat Master Password! Access Denied.
+        </div>
+      </div>
+
+      <p style="color: #57606f; font-size: 0.72rem; margin: 0;">
+        Exam integrity monitored by AI Proctor Engine • SCE Supaul
+      </p>
+    </div>
+  </div>
+
   <!-- Floating Toast Notification for Security Warnings -->
   <div class="cheat-toast" id="cheat-toast">
     ⚠️ Red Flag Warning Triggered!
   </div>
 
-  <!-- JavaScript Scripts & Face AI Models -->
+  <!-- JavaScript Scripts & Face/Object AI Models -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
   <script src="js/anti-cheat-exam.js"></script>
   <script>
     lucide.createIcons();

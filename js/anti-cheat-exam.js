@@ -50,7 +50,8 @@ let state = {
   fullscreenCheckInterval: null,
   candidatePhoto: null,
   isFaceVerified: false,
-  cameraStream: null
+  cameraStream: null,
+  isPhoneLockActive: false
 };
 
 // Official Question Bank for Supaul College of Engineering - Technical Club (/15)
@@ -633,10 +634,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// REAL-TIME AI & COMPUTER VISION FACE VERIFICATION ENGINE
+// REAL-TIME AI & COMPUTER VISION FACE & OBJECT PROCTOR ENGINE
 // ─────────────────────────────────────────────────────────────
 let blazefaceModel = null;
 let isModelLoading = false;
+let cocoSsdModel = null;
+let isCocoLoading = false;
+let proctorInterval = null;
+let isProctorAnalyzing = false;
 
 // Preload BlazeFace neural network in background
 async function initFaceAIModel() {
@@ -649,6 +654,21 @@ async function initFaceAIModel() {
       console.warn("BlazeFace load notice, falling back to Native FaceDetector / CV:", err);
     } finally {
       isModelLoading = false;
+    }
+  }
+}
+
+// Preload COCO-SSD object detection model in background (Secondary Phone Detection)
+async function initObjectAIModel() {
+  if (window.cocoSsd && !cocoSsdModel && !isCocoLoading) {
+    try {
+      isCocoLoading = true;
+      cocoSsdModel = await window.cocoSsd.load();
+      console.log("✅ COCO-SSD Object AI Model (Phone Detection) Loaded Successfully!");
+    } catch (err) {
+      console.warn("COCO-SSD load notice:", err);
+    } finally {
+      isCocoLoading = false;
     }
   }
 }
@@ -926,6 +946,177 @@ async function detectRealFace(canvas, video) {
   }
 
   return { verified: false, message: "❌ Face verification fail ho gaya! Kripya dubara koshish karein.", toastMessage: "Verification Failed" };
+}
+
+// ─────────────────────────────────────────────────────────────
+// REAL-TIME SECONDARY PHONE & CHEATING DEVICE DETECTION ENGINE
+// ─────────────────────────────────────────────────────────────
+function startAIProctorLoop() {
+  if (proctorInterval) clearInterval(proctorInterval);
+
+  // Initialize COCO-SSD and BlazeFace models
+  initObjectAIModel();
+  initFaceAIModel();
+
+  proctorInterval = setInterval(async () => {
+    if (!state.examStarted || state.examSubmitted || state.isPhoneLockActive) return;
+    if (isProctorAnalyzing) return;
+
+    const proctorVideo = document.getElementById('proctor-video-stream');
+    if (!proctorVideo || !proctorVideo.videoWidth) return;
+
+    isProctorAnalyzing = true;
+    try {
+      await checkFrameForPhoneViolation(proctorVideo);
+    } catch (err) {
+      console.warn("AI Proctor frame check notice:", err);
+    } finally {
+      isProctorAnalyzing = false;
+    }
+  }, 1800); // Check frame every 1.8 seconds
+}
+
+async function checkFrameForPhoneViolation(video) {
+  if (!cocoSsdModel && !blazefaceModel) {
+    // Attempt background load if not ready
+    initObjectAIModel();
+    return;
+  }
+
+  // 1. Check for secondary mobile phones using COCO-SSD
+  if (cocoSsdModel) {
+    try {
+      const predictions = await cocoSsdModel.detect(video);
+      if (predictions && predictions.length > 0) {
+        let phoneFound = null;
+        let personCount = 0;
+
+        for (const p of predictions) {
+          // Detect phone / camera / tablet / secondary screen
+          if ((p.class === 'cell phone' || p.class === 'camera' || p.class === 'remote') && p.score >= 0.45) {
+            phoneFound = p;
+            break;
+          }
+          if (p.class === 'person' && p.score >= 0.60) {
+            personCount++;
+          }
+        }
+
+        if (phoneFound) {
+          captureEvidenceAndLockExam(
+            'SECONDARY_PHONE_DETECTED',
+            `Dusra Mobile Phone / Camera (${Math.round(phoneFound.score * 100)}% Confidence) Detect Hua!`,
+            video
+          );
+          return;
+        }
+
+        if (personCount > 1) {
+          captureEvidenceAndLockExam(
+            'MULTIPLE_PERSONS_DETECTED',
+            'Ek se zyada log screen ke samne detect hue!',
+            video
+          );
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("COCO-SSD inference notice:", err);
+    }
+  }
+
+  // 2. Secondary check for multiple faces using BlazeFace
+  if (blazefaceModel) {
+    try {
+      const faces = await blazefaceModel.estimateFaces(video, false);
+      if (faces && faces.length > 1) {
+        captureEvidenceAndLockExam(
+          'MULTIPLE_FACES_DETECTED',
+          'Frame me 2 ya usse zyada chehre dikh rahe hain!',
+          video
+        );
+      }
+    } catch (err) {}
+  }
+}
+
+function captureEvidenceAndLockExam(type, reasonText, video) {
+  if (state.isPhoneLockActive || state.examSubmitted) return;
+  state.isPhoneLockActive = true;
+
+  // Create evidence snapshot with red border, timestamp, student info
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+
+  // Draw mirrored video frame
+  ctx.save();
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  // Overlay Red Evidence Header Banner
+  ctx.fillStyle = 'rgba(235, 87, 87, 0.9)';
+  ctx.fillRect(0, 0, canvas.width, 48);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 16px Arial';
+  ctx.fillText('🚨 VIOLATION EVIDENCE: ' + reasonText, 14, 30);
+
+  // Overlay Black Footer with candidate details & timestamp
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.fillRect(0, canvas.height - 36, canvas.width, 36);
+
+  ctx.fillStyle = '#00f2fe';
+  ctx.font = 'bold 13px monospace';
+  const timeString = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  ctx.fillText(`${state.student.name || 'Candidate'} (${state.student.rollNo || 'N/A'}) | ${timeString}`, 14, canvas.height - 13);
+
+  const evidenceDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  // Update violation logs & warning
+  state.warningCount++;
+  logViolation(`[CRITICAL AI PROCTOR] ${reasonText} (Warning ${state.warningCount}/${CONFIG.maxWarnings})`);
+  updateWarningUI();
+  playBeepSound();
+
+  // Populate Lock Modal
+  const modal = document.getElementById('phone-detected-modal');
+  const imgEl = document.getElementById('phone-violation-img');
+  const timeEl = document.getElementById('phone-violation-time');
+  const passInput = document.getElementById('phone-master-pass-input');
+  const errEl = document.getElementById('phone-unlock-error');
+
+  if (imgEl) imgEl.src = evidenceDataUrl;
+  if (timeEl) timeEl.innerText = `Captured At: ${timeString}`;
+  if (passInput) passInput.value = '';
+  if (errEl) errEl.style.display = 'none';
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+
+  showToast(`🚨 AI PROCTOR ALERT: ${reasonText}`);
+}
+
+function unlockPhoneViolation() {
+  const passInput = document.getElementById('phone-master-pass-input');
+  const errEl = document.getElementById('phone-unlock-error');
+  const modal = document.getElementById('phone-detected-modal');
+
+  if (!passInput) return;
+  const entered = passInput.value.trim();
+
+  if (MASTER_UNLOCK_PASSWORDS.includes(entered)) {
+    state.isPhoneLockActive = false;
+    if (modal) modal.style.display = 'none';
+    showToast("🔓 Exam Unlocked by Invigilator Master Key!");
+  } else {
+    if (errEl) errEl.style.display = 'block';
+    passInput.focus();
+  }
 }
 
 // Setup UI Event Listeners
@@ -1253,13 +1444,15 @@ function startExamProcess() {
   state.student = { name, rollNo, branch, subject };
   state.examStarted = true;
 
-  // Stop camera stream to free up device resources
-  if (state.cameraStream) {
-    try {
-      state.cameraStream.getTracks().forEach(track => track.stop());
-    } catch (e) {}
-    state.cameraStream = null;
+  // Connect live camera to AI Proctor video feed & start detection loop
+  const proctorVideo = document.getElementById('proctor-video-stream');
+  if (proctorVideo && state.cameraStream) {
+    proctorVideo.srcObject = state.cameraStream;
+    proctorVideo.play().catch(() => {});
   }
+
+  // Start Real-Time AI Proctor Watchdog (Secondary Phone Detection)
+  startAIProctorLoop();
 
   // Update Header Candidate Photo Preview
   const headerPhotoImg = document.getElementById('header-candidate-photo');
@@ -1565,6 +1758,18 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
   if (state.examSubmitted) return;
   state.examSubmitted = true;
   clearInterval(state.timerInterval);
+
+  // Stop AI proctor loop & camera stream
+  if (proctorInterval) {
+    clearInterval(proctorInterval);
+    proctorInterval = null;
+  }
+  if (state.cameraStream) {
+    try {
+      state.cameraStream.getTracks().forEach(track => track.stop());
+    } catch (e) {}
+    state.cameraStream = null;
+  }
 
   // Calculate Score
   let score = 0;

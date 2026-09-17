@@ -153,8 +153,84 @@ let QUESTION_BANK = [
   }
 ];
 
+// ─────────────────────────────────────────────────────────────
+// DEVICE LOCKOUT — 1 attempt per device per hour
+// ─────────────────────────────────────────────────────────────
+const LOCKOUT_KEY = 'sec_quiz_submitted_at';
+const LOCKOUT_DURATION_MS = 60 * 60 * 1000; // 1 hour
+
+function checkDeviceLockout() {
+  const submittedAt = localStorage.getItem(LOCKOUT_KEY);
+  if (!submittedAt) return false; // no previous attempt
+
+  const elapsed = Date.now() - parseInt(submittedAt, 10);
+  if (elapsed < LOCKOUT_DURATION_MS) {
+    showLockoutScreen(LOCKOUT_DURATION_MS - elapsed);
+    return true; // locked
+  }
+  // Lockout expired — clear old entry
+  localStorage.removeItem(LOCKOUT_KEY);
+  return false;
+}
+
+function showLockoutScreen(remainingMs) {
+  // Hide all normal content
+  document.body.innerHTML = `
+    <div id="lockout-screen" style="
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      background: linear-gradient(135deg,#0a0e1a 0%,#131b2e 100%);
+      font-family:'Segoe UI',sans-serif; text-align:center; padding:2rem;">
+      <div style="font-size:4rem; margin-bottom:1rem;">🔒</div>
+      <h1 style="color:#e74c3c; font-size:2rem; margin-bottom:0.5rem;">Quiz Already Attempted!</h1>
+      <p style="color:#aab4c8; font-size:1.1rem; max-width:480px; line-height:1.6;">
+        Aapne is device se quiz pehle de chuke hain.<br>
+        Ek ghante mein sirf <strong style="color:#00f2fe;">1 baar</strong> quiz diya ja sakta hai.
+      </p>
+      <div style="
+        margin-top:2rem; padding:1.5rem 3rem;
+        background:rgba(231,76,60,0.12); border:2px solid #e74c3c;
+        border-radius:16px;">
+        <div style="color:#aab4c8; font-size:0.9rem; margin-bottom:0.4rem;">Dobara kholne ka samay:</div>
+        <div id="lockout-countdown" style="
+          font-size:2.5rem; font-weight:700; letter-spacing:4px;
+          color:#00f2fe; font-family:monospace;">--:--:--</div>
+      </div>
+      <p style="color:#555e70; font-size:0.85rem; margin-top:2rem;">
+        SCE Supaul — Anti-Cheat Exam Portal
+      </p>
+    </div>
+  `;
+
+  // Live countdown
+  function tick() {
+    const submittedAt = parseInt(localStorage.getItem(LOCKOUT_KEY), 10);
+    const left = Math.max(0, LOCKOUT_DURATION_MS - (Date.now() - submittedAt));
+    const h = Math.floor(left / 3600000);
+    const m = Math.floor((left % 3600000) / 60000);
+    const s = Math.floor((left % 60000) / 1000);
+    const el = document.getElementById('lockout-countdown');
+    if (el) {
+      el.innerText =
+        String(h).padStart(2,'0') + ':' +
+        String(m).padStart(2,'0') + ':' +
+        String(s).padStart(2,'0');
+    }
+    if (left <= 0) {
+      // Auto reload when lockout expires
+      location.reload();
+      return;
+    }
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
 // Initialize System on DOM Load
 document.addEventListener('DOMContentLoaded', () => {
+  // ── Device lockout check FIRST ──
+  if (checkDeviceLockout()) return; // show block screen, stop everything
+
   // Fetch dynamic question bank if available
   fetch('/api/questions')
     .then(r => r.json())
@@ -801,6 +877,9 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
   if (state.examSubmitted) return;
   state.examSubmitted = true;
   clearInterval(state.timerInterval);
+
+  // ── Save device lockout timestamp (1-hour block) ──
+  localStorage.setItem(LOCKOUT_KEY, Date.now().toString());
 
   // Calculate Score
   let score = 0;

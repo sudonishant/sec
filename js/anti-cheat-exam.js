@@ -160,6 +160,144 @@ let QUESTION_BANK = [
 ];
 
 // ─────────────────────────────────────────────────────────────
+// INTERNET / NETWORK TIME SYNC & DEVICE TAMPER PROTECTION
+// ─────────────────────────────────────────────────────────────
+let networkTimeOffset = 0; // Difference between real Internet time and device time
+const MAX_ALLOWED_TIME_DRIFT_SEC = 120; // 2 minutes max allowed mismatch
+
+function getSyncedNow() {
+  return Date.now() + networkTimeOffset;
+}
+
+// Fetch real network atomic time from server / edge / API
+async function fetchInternetTime() {
+  // Method 1: Edge Server / Vercel / Node HTTP Date Header (Super Fast & Exact)
+  try {
+    const res = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+    const dateHeader = res.headers.get('date');
+    if (dateHeader) {
+      const serverMs = new Date(dateHeader).getTime();
+      if (!isNaN(serverMs) && serverMs > 0) {
+        return serverMs;
+      }
+    }
+  } catch (err) {}
+
+  // Method 2: Node backend health API if local
+  try {
+    const res = await fetch('/api/health', { cache: 'no-store' });
+    const data = await res.json();
+    if (data && data.timestamp) {
+      const serverMs = new Date(data.timestamp).getTime();
+      if (!isNaN(serverMs) && serverMs > 0) return serverMs;
+    }
+  } catch (err) {}
+
+  // Method 3: Public World Time API fallback
+  try {
+    const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata', { cache: 'no-store' });
+    const data = await res.json();
+    if (data && data.unixtime) {
+      return data.unixtime * 1000;
+    }
+  } catch (err) {}
+
+  return null;
+}
+
+// Verify Device Time against Network Time
+async function verifyTimeSync() {
+  const networkMs = await fetchInternetTime();
+  if (!networkMs) {
+    // If offline or completely unreachable, fallback to device clock
+    console.warn("Internet time unreachable, using local clock.");
+    return true;
+  }
+
+  const deviceMs = Date.now();
+  networkTimeOffset = networkMs - deviceMs;
+  const driftSeconds = Math.abs(Math.round((networkMs - deviceMs) / 1000));
+
+  console.log(`[TIME SYNC] Device: ${new Date(deviceMs).toLocaleTimeString()}, Internet: ${new Date(networkMs).toLocaleTimeString()}, Drift: ${driftSeconds}s`);
+
+  if (driftSeconds > MAX_ALLOWED_TIME_DRIFT_SEC) {
+    showTimeMismatchScreen(deviceMs, networkMs, driftSeconds);
+    return false; // Block quiz
+  }
+
+  return true; // Time verified & synced
+}
+
+function showTimeMismatchScreen(deviceMs, networkMs, driftSeconds) {
+  const deviceTimeStr = new Date(deviceMs).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const internetTimeStr = new Date(networkMs).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const driftMin = Math.round(driftSeconds / 60);
+
+  document.body.innerHTML = `
+    <div style="
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      background: linear-gradient(135deg,#0a0e1a 0%,#1c1015 100%);
+      font-family:'Segoe UI',sans-serif; text-align:center; padding:2rem;">
+
+      <div style="font-size:4.5rem; margin-bottom:1rem; animation: pulse 2s infinite;">⚠️</div>
+
+      <h1 style="color:#ff4757; font-size:2rem; margin-bottom:0.5rem; text-shadow:0 0 15px rgba(255,71,87,0.4);">
+        Device Time Mismatch Detected!
+      </h1>
+      
+      <p style="color:#ced6e0; font-size:1.05rem; max-width:540px; line-height:1.6; margin-bottom:2rem;">
+        Aapke device (phone/PC) ka time <strong>Official Internet Time</strong> se match nahi kar raha hai.<br>
+        Quiz ki security aur fair exam ke liye time match hona anivarya hai.
+      </p>
+
+      <div style="
+        display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; max-width:480px; width:100%;
+        background:rgba(0,0,0,0.5); border:2px solid #ff4757; border-radius:16px; padding:1.5rem; margin-bottom:2rem;">
+        
+        <div style="padding:1rem; background:rgba(255,71,87,0.1); border-radius:10px;">
+          <div style="color:#ff6b81; font-size:0.8rem; font-weight:600; text-transform:uppercase;">📱 Aapka Phone Time</div>
+          <div style="color:#fff; font-size:1.3rem; font-weight:bold; margin-top:0.4rem; font-family:monospace;">${deviceTimeStr}</div>
+        </div>
+
+        <div style="padding:1rem; background:rgba(0,242,254,0.1); border-radius:10px;">
+          <div style="color:#00f2fe; font-size:0.8rem; font-weight:600; text-transform:uppercase;">🌐 Real Internet Time</div>
+          <div style="color:#fff; font-size:1.3rem; font-weight:bold; margin-top:0.4rem; font-family:monospace;">${internetTimeStr}</div>
+        </div>
+
+        <div style="grid-column: span 2; color:#ffa502; font-size:0.85rem; font-weight:600;">
+          ⏳ Antar (Difference): ~${driftMin > 0 ? driftMin + ' Minute' : driftSeconds + ' Seconds'}
+        </div>
+      </div>
+
+      <div style="
+        background:rgba(255,255,255,0.05); border-left:4px solid #00f2fe; border-radius:8px;
+        padding:1rem 1.5rem; max-width:520px; text-align:left; margin-bottom:2rem;">
+        <strong style="color:#00f2fe; font-size:0.95rem;">Kaise Theek Karein:</strong>
+        <ol style="color:#aab4c8; font-size:0.88rem; margin:0.5rem 0 0 1.2rem; padding:0; line-height:1.5;">
+          <li>Apne Phone ki <strong>Settings ⚙️</strong> kholein.</li>
+          <li><strong>Date & Time</strong> setting me jaayein.</li>
+          <li><strong>"Set Time Automatically"</strong> ya <strong>"Use Network-Provided Time"</strong> ko ON karein.</li>
+          <li>Neeche diye button par click karein.</li>
+        </ol>
+      </div>
+
+      <button onclick="location.reload();" style="
+        background: linear-gradient(135deg, #00f2fe, #4facfe); border:none;
+        color:#000; font-weight:bold; padding:0.9rem 2.5rem; font-size:1rem;
+        border-radius:30px; cursor:pointer; box-shadow:0 4px 15px rgba(0,242,254,0.4);
+        transition: transform 0.2s;">
+        🔄 Re-Verify Time & Refresh
+      </button>
+
+      <p style="color:#57606f; font-size:0.75rem; margin-top:2rem;">
+        SCE Supaul — Anti-Tamper Clock Security System
+      </p>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
 // DEVICE LOCKOUT — 1 attempt per device per hour
 // ─────────────────────────────────────────────────────────────
 const LOCKOUT_KEY = 'sec_quiz_submitted_at';
@@ -169,7 +307,7 @@ function checkDeviceLockout() {
   const submittedAt = localStorage.getItem(LOCKOUT_KEY);
   if (!submittedAt) return false; // no previous attempt
 
-  const elapsed = Date.now() - parseInt(submittedAt, 10);
+  const elapsed = getSyncedNow() - parseInt(submittedAt, 10);
   if (elapsed < LOCKOUT_DURATION_MS) {
     showLockoutScreen(LOCKOUT_DURATION_MS - elapsed);
     return true; // locked
@@ -208,10 +346,10 @@ function showLockoutScreen(remainingMs) {
     </div>
   `;
 
-  // Live countdown
+  // Live countdown using synced network time
   function tick() {
     const submittedAt = parseInt(localStorage.getItem(LOCKOUT_KEY), 10);
-    const left = Math.max(0, LOCKOUT_DURATION_MS - (Date.now() - submittedAt));
+    const left = Math.max(0, LOCKOUT_DURATION_MS - (getSyncedNow() - submittedAt));
     const h = Math.floor(left / 3600000);
     const m = Math.floor((left % 3600000) / 60000);
     const s = Math.floor((left % 60000) / 1000);
@@ -232,7 +370,6 @@ function showLockoutScreen(remainingMs) {
   tick();
 }
 
-// Initialize System on DOM Load
 // ─────────────────────────────────────────────────────────────
 // QUIZ SCHEDULED START TIME CHECK
 // ─────────────────────────────────────────────────────────────
@@ -240,7 +377,7 @@ function checkQuizStartTime() {
   if (!CONFIG.quizStartTime) return false; // no time set → always open
 
   const startTime = new Date(CONFIG.quizStartTime).getTime();
-  const now = Date.now();
+  const now = getSyncedNow();
 
   if (now < startTime) {
     showWaitingScreen(startTime);
@@ -312,9 +449,9 @@ function showWaitingScreen(startTimestamp) {
     </div>
   `;
 
-  // Live countdown tick
+  // Live countdown tick using synced network time
   function tick() {
-    const left = Math.max(0, startTimestamp - Date.now());
+    const left = Math.max(0, startTimestamp - getSyncedNow());
     const h = Math.floor(left / 3600000);
     const m = Math.floor((left % 3600000) / 60000);
     const s = Math.floor((left % 60000) / 1000);
@@ -335,12 +472,46 @@ function showWaitingScreen(startTimestamp) {
   tick();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  // ── 1. Quiz start time check FIRST ──
+// ─────────────────────────────────────────────────────────────
+// RUNTIME CLOCK TAMPERING WATCHDOG (Detects manual clock changes during exam)
+// ─────────────────────────────────────────────────────────────
+function startClockTamperWatchdog() {
+  let lastDeviceDate = Date.now();
+  let lastMonotonic = performance.now();
+
+  setInterval(() => {
+    if (!state.examStarted || state.examSubmitted) return;
+    const currentDeviceDate = Date.now();
+    const currentMonotonic = performance.now();
+
+    const elapsedDate = currentDeviceDate - lastDeviceDate;
+    const elapsedMonotonic = currentMonotonic - lastMonotonic;
+
+    // If device clock jumped forward or backward by more than 5 seconds compared to real elapsed hardware time
+    if (Math.abs(elapsedDate - elapsedMonotonic) > 5000) {
+      logViolation("System Clock Tampering / Manual Device Time Change Detected");
+      playBeepSound();
+      showToast("🚨 ALERT: Device clock tampering detected! Exam integrity flag raised.");
+    }
+
+    lastDeviceDate = currentDeviceDate;
+    lastMonotonic = currentMonotonic;
+  }, 2000);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // ── 0. Verify Device Time against Official Internet Time ──
+  const isTimeValid = await verifyTimeSync();
+  if (!isTimeValid) return; // Block page if device time is manipulated or incorrect
+
+  // ── 1. Quiz start time check (using verified internet time) ──
   if (checkQuizStartTime()) return;
 
-  // ── 2. Device lockout check ──
+  // ── 2. Device lockout check (using verified internet time) ──
   if (checkDeviceLockout()) return;
+
+  // Start real-time clock tampering detector
+  startClockTamperWatchdog();
 
   // Fetch dynamic question bank if available
   fetch('/api/questions')
@@ -362,6 +533,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initUI();
   setupAntiCheatListeners();
 });
+
+
 
 // Setup UI Event Listeners
 function initUI() {

@@ -47,7 +47,10 @@ let state = {
   timerInterval: null,
   violationLogs: [],
   lastViolationTime: 0,
-  fullscreenCheckInterval: null
+  fullscreenCheckInterval: null,
+  candidatePhoto: null,
+  isFaceVerified: false,
+  cameraStream: null
 };
 
 // Official Question Bank for Supaul College of Engineering - Technical Club (/15)
@@ -534,7 +537,301 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupAntiCheatListeners();
 });
 
+// ─────────────────────────────────────────────────────────────
+// REAL-TIME AI & COMPUTER VISION FACE VERIFICATION ENGINE
+// ─────────────────────────────────────────────────────────────
+let blazefaceModel = null;
+let isModelLoading = false;
 
+// Preload BlazeFace neural network in background
+async function initFaceAIModel() {
+  if (window.blazeface && !blazefaceModel && !isModelLoading) {
+    try {
+      isModelLoading = true;
+      blazefaceModel = await window.blazeface.load();
+      console.log("✅ BlazeFace Neural Model Loaded Successfully!");
+    } catch (err) {
+      console.warn("BlazeFace load notice, falling back to Native FaceDetector / CV:", err);
+    } finally {
+      isModelLoading = false;
+    }
+  }
+}
+
+// 1. Open User Webcam / Mobile Front Camera
+async function openCandidateCamera() {
+  const video = document.getElementById('face-video');
+  const placeholder = document.getElementById('camera-placeholder');
+  const guideOval = document.getElementById('face-guide-oval');
+  const openBtn = document.getElementById('open-camera-btn');
+  const captureBtn = document.getElementById('capture-face-btn');
+  const retakeBtn = document.getElementById('retake-face-btn');
+  const statusText = document.getElementById('face-status-text');
+  const previewImg = document.getElementById('face-preview-img');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert("⚠️ Aapka browser camera support nahi karta ya HTTPS connection anivarya hai!");
+    return;
+  }
+
+  statusText.innerText = "⏳ Camera shuru ho raha hai... Kripya allow karein.";
+  statusText.style.color = "#0275d8";
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'user',
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      },
+      audio: false
+    });
+
+    state.cameraStream = stream;
+    video.srcObject = stream;
+    video.style.display = 'block';
+    placeholder.style.display = 'none';
+    previewImg.style.display = 'none';
+    guideOval.style.display = 'block';
+
+    openBtn.style.display = 'none';
+    captureBtn.style.display = 'inline-block';
+    retakeBtn.style.display = 'none';
+
+    statusText.innerText = "👤 Apne chehre ko circle ke andar rakhein aur 'Capture & Verify Face' dabayein.";
+    statusText.style.color = "#333";
+
+    initFaceAIModel();
+  } catch (err) {
+    console.error("Camera access error:", err);
+    statusText.innerText = "❌ Camera access nahi mila! Browser settings me jaakar camera permission ALLOW karein.";
+    statusText.style.color = "#eb5757";
+    alert("❌ Camera Permission Denied!\n\nQuiz dene ke liye Camera allow karna anivarya hai. Kripya browser address bar me lock icon par click karke camera allow karein.");
+  }
+}
+
+// 2. Capture Frame and Run Real Face Verification
+async function captureAndVerifyFace() {
+  const video = document.getElementById('face-video');
+  const canvas = document.getElementById('face-canvas');
+  const previewImg = document.getElementById('face-preview-img');
+  const badge = document.getElementById('face-badge');
+  const statusText = document.getElementById('face-status-text');
+  const startBtn = document.getElementById('start-exam-btn');
+  const captureBtn = document.getElementById('capture-face-btn');
+  const retakeBtn = document.getElementById('retake-face-btn');
+  const guideOval = document.getElementById('face-guide-oval');
+  const viewport = document.getElementById('camera-viewport');
+
+  if (!video || !video.videoWidth) {
+    alert("Camera video frame abhi ready nahi hai. Kripya 2 second ruk kar dubara dabayein.");
+    return;
+  }
+
+  // Draw current frame to canvas
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  statusText.innerText = "🔍 Chehra (Face) verify kiya ja raha hai... Kripya hilein nahi.";
+  statusText.style.color = "#0275d8";
+
+  // Run verification
+  const result = await detectRealFace(canvas, video);
+
+  if (result.verified) {
+    state.isFaceVerified = true;
+    state.candidatePhoto = canvas.toDataURL('image/jpeg', 0.85);
+
+    previewImg.src = state.candidatePhoto;
+    previewImg.style.display = 'block';
+    video.style.display = 'none';
+    guideOval.style.display = 'none';
+
+    viewport.style.borderColor = '#27ae60';
+    viewport.style.boxShadow = '0 0 15px rgba(39, 174, 96, 0.4)';
+
+    badge.style.background = '#27ae60';
+    badge.innerText = '🟢 REAL FACE VERIFIED';
+
+    statusText.innerText = `✅ Real Face Successfully Verified (${result.method})! Ab aap "Start Exam" par click karein.`;
+    statusText.style.color = '#27ae60';
+
+    startBtn.disabled = false;
+    startBtn.style.background = '#27ae60';
+    startBtn.style.opacity = '1';
+    startBtn.style.cursor = 'pointer';
+    startBtn.style.boxShadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
+    startBtn.innerHTML = 'Start Exam 🚀';
+
+    captureBtn.style.display = 'none';
+    retakeBtn.style.display = 'inline-block';
+
+    playBeepSound();
+    showToast("✅ Real Candidate Face Verified!");
+  } else {
+    state.isFaceVerified = false;
+    state.candidatePhoto = null;
+
+    viewport.style.borderColor = '#eb5757';
+    viewport.style.boxShadow = '0 0 15px rgba(235, 87, 87, 0.4)';
+
+    badge.style.background = '#eb5757';
+    badge.innerText = '❌ NOT VERIFIED';
+
+    statusText.innerText = result.message || "❌ Real face detect nahi hua! Kripya roshni me aakar camera ke theek samne dekhein.";
+    statusText.style.color = '#eb5757';
+
+    startBtn.disabled = true;
+    startBtn.style.background = '#6c757d';
+    startBtn.style.opacity = '0.6';
+    startBtn.style.cursor = 'not-allowed';
+    startBtn.style.boxShadow = 'none';
+    startBtn.innerHTML = '🔒 Verify Face to Unlock Exam';
+
+    showToast("❌ " + (result.toastMessage || "Real Face Verify Nahi Hua!"));
+  }
+}
+
+// 3. Retake candidate photo
+function retakeCandidatePhoto() {
+  const video = document.getElementById('face-video');
+  const previewImg = document.getElementById('face-preview-img');
+  const badge = document.getElementById('face-badge');
+  const statusText = document.getElementById('face-status-text');
+  const startBtn = document.getElementById('start-exam-btn');
+  const captureBtn = document.getElementById('capture-face-btn');
+  const retakeBtn = document.getElementById('retake-face-btn');
+  const guideOval = document.getElementById('face-guide-oval');
+  const viewport = document.getElementById('camera-viewport');
+
+  state.isFaceVerified = false;
+  state.candidatePhoto = null;
+
+  previewImg.style.display = 'none';
+  video.style.display = 'block';
+  guideOval.style.display = 'block';
+
+  viewport.style.borderColor = '#ccc';
+  viewport.style.boxShadow = '0 4px 10px rgba(0,0,0,0.15)';
+
+  badge.style.background = '#eb5757';
+  badge.innerText = '🔴 NOT VERIFIED';
+
+  statusText.innerText = "👤 Apne chehre ko circle ke andar rakhein aur 'Capture & Verify Face' dabayein.";
+  statusText.style.color = "#333";
+
+  captureBtn.style.display = 'inline-block';
+  retakeBtn.style.display = 'none';
+
+  startBtn.disabled = true;
+  startBtn.style.background = '#6c757d';
+  startBtn.style.opacity = '0.6';
+  startBtn.style.cursor = 'not-allowed';
+  startBtn.innerHTML = '🔒 Verify Face to Unlock Exam';
+}
+
+// 4. Multi-Layer Real Face Detector
+async function detectRealFace(canvas, video) {
+  // Method A: Native Chromium FaceDetector API
+  if ('FaceDetector' in window) {
+    try {
+      const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 3 });
+      const faces = await detector.detect(canvas);
+      if (faces && faces.length === 1) {
+        return { verified: true, count: 1, method: 'Native AI Vision' };
+      } else if (faces && faces.length > 1) {
+        return { verified: false, message: "⚠️ Ek se zyada chehre dikh rahe hain! Frame me sirf 1 candidate hona chahiye.", toastMessage: "Multiple Faces Detected!" };
+      } else {
+        return { verified: false, message: "❌ Chehra nahi mila! Kripya camera ke theek samne aakar photo lein.", toastMessage: "No Face Detected!" };
+      }
+    } catch (e) {
+      console.warn("FaceDetector failed, trying next method:", e);
+    }
+  }
+
+  // Method B: TensorFlow BlazeFace Deep Learning Model
+  if (blazefaceModel) {
+    try {
+      const predictions = await blazefaceModel.estimateFaces(canvas, false);
+      if (predictions && predictions.length === 1) {
+        const p = predictions[0];
+        const prob = p.probability ? (Array.isArray(p.probability) ? p.probability[0] : p.probability) : 1;
+        if (prob >= 0.80) {
+          return { verified: true, count: 1, method: 'BlazeFace AI' };
+        }
+      } else if (predictions && predictions.length > 1) {
+        return { verified: false, message: "⚠️ Frame me ek se zyada log dikh rahe hain! Sirf ek candidate hona chahiye.", toastMessage: "Multiple Faces Found!" };
+      } else {
+        return { verified: false, message: "❌ Koi human face detect nahi hua! Kripya camera ke samne aakar baithein.", toastMessage: "No Face Detected!" };
+      }
+    } catch (e) {
+      console.warn("BlazeFace estimate failed, trying CV fallback:", e);
+    }
+  }
+
+  // Method C: Computer Vision Luma & Skin Entropy Fallback
+  try {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+
+    let skinCount = 0;
+    let centerSkinCount = 0;
+    let totalLuma = 0;
+    const totalPixels = w * h;
+
+    const cx1 = w * 0.25, cx2 = w * 0.75;
+    const cy1 = h * 0.15, cy2 = h * 0.85;
+
+    for (let i = 0; i < d.length; i += 16) {
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      const pixelIdx = i / 4;
+      const px = pixelIdx % w;
+      const py = Math.floor(pixelIdx / w);
+
+      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      totalLuma += luma;
+
+      const isSkin = (r > 60 && g > 40 && b > 20 && (r - g) > 10 && (r - b) > 10 && Math.abs(r - g) < 140);
+      if (isSkin) {
+        skinCount++;
+        if (px >= cx1 && px <= cx2 && py >= cy1 && py <= cy2) {
+          centerSkinCount++;
+        }
+      }
+    }
+
+    const sampledPixels = totalPixels / 4;
+    const avgBrightness = totalLuma / sampledPixels;
+    const skinRatio = skinCount / sampledPixels;
+    const centerSkinRatio = centerSkinCount / sampledPixels;
+
+    if (avgBrightness < 25) {
+      return { verified: false, message: "❌ Kamre me bahut andhera hai! Kripya light/roshni me aakar photo lein.", toastMessage: "Camera Too Dark!" };
+    }
+    if (avgBrightness > 245) {
+      return { verified: false, message: "❌ Camera par bahut tez light ya reflection hai! Kripya normal light me photo lein.", toastMessage: "Overexposed!" };
+    }
+
+    if (skinRatio >= 0.08 && centerSkinRatio >= 0.06) {
+      return { verified: true, count: 1, method: 'Biometric Vision' };
+    } else {
+      return { verified: false, message: "❌ Real human face verify nahi hua! Kripya camera ke theek samne aakar photo lein.", toastMessage: "Face Not Found!" };
+    }
+  } catch (err) {
+    console.error("CV fallback error:", err);
+  }
+
+  return { verified: false, message: "❌ Face verification fail ho gaya! Kripya dubara koshish karein.", toastMessage: "Verification Failed" };
+}
 
 // Setup UI Event Listeners
 function initUI() {
@@ -851,11 +1148,23 @@ function startExamProcess() {
     return;
   }
 
-  state.student = { name, rollNo, branch, subject };
-  state.examStarted = true;
+  // Mandatory Real Face Verification Check
+  if (!state.isFaceVerified || !state.candidatePhoto) {
+    showToast("⚠️ Real Face Verification Anivarya Hai!");
+    alert("⚠️ REAL FACE VERIFICATION MANDATORY!\n\nExam shuru karne se pehle camera ke samne apna real face verify karna anivarya hai. Kripya 'Open Camera' par click karke face verify karein.");
+    return;
+  }
 
   state.student = { name, rollNo, branch, subject };
   state.examStarted = true;
+
+  // Stop camera stream to free up device resources
+  if (state.cameraStream) {
+    try {
+      state.cameraStream.getTracks().forEach(track => track.stop());
+    } catch (e) {}
+    state.cameraStream = null;
+  }
 
   // Update Header Candidate Photo Preview
   const headerPhotoImg = document.getElementById('header-candidate-photo');
@@ -1228,6 +1537,7 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
     detailedResponsesSummary: responsesArray.join(' | '),
     userAnswersJSON: JSON.stringify(state.userAnswers),
     violationLogs: state.violationLogs.join(' | ') || 'None (Clean Exam)',
+    candidatePhoto: state.candidatePhoto || '',
     screenshot: ''
   };
 

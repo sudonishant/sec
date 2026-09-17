@@ -38,7 +38,10 @@
 
     <!-- Candidate & Monitor Header Card (Hidden on starting registration page) -->
     <div style="display: none; align-items: center; gap: 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.4rem 0.85rem;" id="header-monitor-bar">
-      <div style="width: 36px; height: 36px; background: #6c757d; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; font-weight: bold;">👤</div>
+      <div style="width: 38px; height: 38px; background: #6c757d; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; font-weight: bold; overflow: hidden; flex-shrink: 0; border: 1px solid #0275d8;">
+        <img id="header-candidate-photo" style="display: none; width: 100%; height: 100%; object-fit: cover;" alt="Candidate">
+        <span id="header-photo-icon">👤</span>
+      </div>
       <div style="font-size: 0.8rem; color: #333; line-height: 1.3;">
         <div>Candidate Name : <strong style="color: #d9534f;" id="nta-candidate-name">[Your Name]</strong></div>
         <div>Subject Name : <strong style="color: #f0ad4e;" id="nta-subject-name">Technical Club Quiz</strong></div>
@@ -108,11 +111,58 @@
           </select>
         </div>
 
+        <!-- Mandatory Live Face Verification Box -->
+        <div class="face-verification-card" style="margin-bottom: 1.5rem; background: #f8f9fa; border: 2px dashed #0275d8; border-radius: 6px; padding: 1.2rem; text-align: center;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <label style="font-size: 0.9rem; color: #003366; font-weight: bold; margin: 0; display: flex; align-items: center; gap: 5px;">
+              📷 Real Face Verification <span style="color: #eb5757;">*</span>
+            </label>
+            <span id="face-badge" style="font-size: 0.72rem; background: #eb5757; color: #fff; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: bold; letter-spacing: 0.5px;">
+              🔴 NOT VERIFIED
+            </span>
+          </div>
+
+          <!-- Video / Photo Preview Box -->
+          <div id="camera-viewport" style="position: relative; width: 220px; height: 165px; margin: 0 auto 0.75rem auto; background: #111; border-radius: 8px; overflow: hidden; border: 3px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            <video id="face-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none;"></video>
+            <img id="face-preview-img" style="width: 100%; height: 100%; object-fit: cover; display: none;" alt="Candidate Photo">
+            
+            <!-- Placeholder icon before camera opens -->
+            <div id="camera-placeholder" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888;">
+              <span style="font-size: 2.5rem;">👤</span>
+              <span style="font-size: 0.75rem; margin-top: 4px; color: #aaa;">Camera Off</span>
+            </div>
+
+            <!-- Face Oval Guide -->
+            <div id="face-guide-oval" style="display: none; position: absolute; top: 8%; left: 18%; width: 64%; height: 84%; border: 2px dashed #00f2fe; border-radius: 50%; pointer-events: none; box-shadow: 0 0 10px rgba(0,242,254,0.3);"></div>
+          </div>
+
+          <canvas id="face-canvas" style="display: none;"></canvas>
+
+          <!-- Instructions & Status Text -->
+          <p id="face-status-text" style="font-size: 0.82rem; color: #555; margin-bottom: 0.75rem; line-height: 1.4; min-height: 24px;">
+            Exam dene ke liye apna <strong>Real Face</strong> verify karna anivarya hai.
+          </p>
+
+          <!-- Camera Action Buttons -->
+          <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" id="open-camera-btn" onclick="openCandidateCamera()" style="background: #0275d8; color: #fff; border: none; padding: 0.55rem 1.2rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+              📸 Open Camera
+            </button>
+            <button type="button" id="capture-face-btn" onclick="captureAndVerifyFace()" style="display: none; background: #27ae60; color: #fff; border: none; padding: 0.55rem 1.2rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+              🔍 Capture & Verify Face
+            </button>
+            <button type="button" id="retake-face-btn" onclick="retakeCandidatePhoto()" style="display: none; background: #6c757d; color: #fff; border: none; padding: 0.55rem 1rem; border-radius: 4px; font-size: 0.85rem; font-weight: bold; cursor: pointer;">
+              🔄 Retake Photo
+            </button>
+          </div>
+        </div>
+
         <!-- Hidden input for subject name to preserve backend functionality -->
         <input type="hidden" id="student-subject" value="Supaul College of Engineering - Technical Club Quiz">
 
-        <button type="submit" class="btn-exam" id="start-exam-btn" style="padding: 0.9rem; font-size: 1.05rem; border-radius: 3px; background: #0275d8; color: #fff; font-weight: bold; width: 100%; border: none; cursor: pointer;">
-          Start Exam 🚀
+        <button type="submit" class="btn-exam" id="start-exam-btn" disabled style="padding: 0.9rem; font-size: 1.05rem; border-radius: 3px; background: #6c757d; color: #fff; font-weight: bold; width: 100%; border: none; cursor: not-allowed; opacity: 0.6; transition: all 0.3s ease;">
+          🔒 Verify Face to Unlock Exam
         </button>
       </form>
     </div>
@@ -289,7 +339,9 @@
     ⚠️ Red Flag Warning Triggered!
   </div>
 
-  <!-- JavaScript Scripts -->
+  <!-- JavaScript Scripts & Face AI Models -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
   <script src="js/anti-cheat-exam.js"></script>
   <script>
     lucide.createIcons();

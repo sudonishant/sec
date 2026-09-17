@@ -360,8 +360,12 @@ function showLockoutScreen(remainingMs) {
   const percentage = lastAttempt.percentage || '0%';
   const photoSrc = lastAttempt.candidatePhoto || '';
   const timeTaken = lastAttempt.formattedTimeTaken || 'N/A';
+  const warningCount = lastAttempt.warningCount || 0;
+  const totalAwaySec = lastAttempt.totalTimeAwaySeconds || 0;
+  const violationLogs = lastAttempt.violationLogs || [];
+  const violationEvidenceList = lastAttempt.violationEvidenceList || [];
 
-  // Hide all normal content & render Previous Attempt Result + Lockout
+  // Hide all normal content & render Previous Attempt Result + Lockout + Violations
   document.body.innerHTML = `
     <div id="lockout-screen" style="
       min-height:100vh; display:flex; flex-direction:column;
@@ -381,7 +385,7 @@ function showLockoutScreen(remainingMs) {
       <h1 style="color:#e74c3c; font-size:1.85rem; margin-bottom:0.2rem; text-shadow:0 0 15px rgba(231,76,60,0.3);">
         Quiz Already Attempted!
       </h1>
-      <p style="color:#aab4c8; font-size:0.95rem; max-width:480px; line-height:1.4; margin-bottom:1.5rem;">
+      <p style="color:#aab4c8; font-size:0.95rem; max-width:480px; line-height:1.4; margin-bottom:1.25rem;">
         Is device se quiz pehle diya ja chuka hai.<br>
         Security niyam anusar ek device se 1 ghante me sirf <strong style="color:#00f2fe;">1 baar</strong> quiz de sakte hain.
       </p>
@@ -389,8 +393,8 @@ function showLockoutScreen(remainingMs) {
       <!-- Previous Attempt Card with Real Photo & Score -->
       <div style="
         background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(0, 242, 254, 0.3);
-        border-radius: 16px; padding: 1.4rem; max-width: 440px; width: 100%;
-        margin-bottom: 1.5rem; box-shadow: 0 8px 30px rgba(0,0,0,0.4); text-align: center;">
+        border-radius: 16px; padding: 1.25rem; max-width: 440px; width: 100%;
+        margin-bottom: 1.25rem; box-shadow: 0 8px 30px rgba(0,0,0,0.4); text-align: center;">
 
         <div style="color:#00f2fe; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:0.85rem;">
           📋 Aapka Pichhla (Previous) Result
@@ -398,7 +402,7 @@ function showLockoutScreen(remainingMs) {
 
         <!-- Verified Face Photo -->
         ${photoSrc ? `
-          <div style="width: 90px; height: 90px; margin: 0 auto 0.75rem auto; border-radius: 50%; overflow: hidden; border: 3px solid #00f2fe; box-shadow: 0 0 15px rgba(0,242,254,0.4);">
+          <div style="width: 85px; height: 85px; margin: 0 auto 0.75rem auto; border-radius: 50%; overflow: hidden; border: 3px solid #00f2fe; box-shadow: 0 0 15px rgba(0,242,254,0.4);">
             <img src="${photoSrc}" style="width: 100%; height: 100%; object-fit: cover;" alt="Candidate Photo">
           </div>
         ` : `
@@ -431,6 +435,48 @@ function showLockoutScreen(remainingMs) {
             <div style="color: #aab4c8; font-size: 0.72rem; margin-top: 3px;">Completed ✅</div>
           </div>
         </div>
+      </div>
+
+      <!-- Red Flag Violations & Evidence Card on Lockout Screen -->
+      <div style="
+        background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(235, 87, 87, 0.45);
+        border-radius: 16px; padding: 1.2rem; max-width: 440px; width: 100%;
+        margin-bottom: 1.25rem; text-align: left; box-shadow: 0 8px 30px rgba(0,0,0,0.4);">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(235,87,87,0.3); padding-bottom: 0.5rem;">
+          <span style="color: #ff4757; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+            🚨 Red Flag Violations (${warningCount} Warnings)
+          </span>
+          <span style="color: #f59e0b; font-size: 0.8rem; font-family: monospace; font-weight: bold;">
+            ⏱️ ${totalAwaySec}s Away
+          </span>
+        </div>
+
+        ${violationEvidenceList.length === 0 && violationLogs.length === 0 ? `
+          <div style="color: #2ecc71; font-size: 0.85rem; text-align: center; padding: 0.75rem;">
+            ✅ Pichhle session me koi security violation ya red flag nahi tha!
+          </div>
+        ` : `
+          <div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding-right: 4px;">
+            ${violationEvidenceList.length > 0 ? violationEvidenceList.map((ev) => `
+              <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(235,87,87,0.25); border-radius: 8px; padding: 0.55rem; display: flex; gap: 0.65rem; align-items: center;">
+                <img src="${ev.snapshot}" onclick="openEvidenceLightbox('${ev.snapshot}')" style="width: 56px; height: 42px; object-fit: cover; border-radius: 4px; border: 1.5px solid #ff4757; cursor: pointer; flex-shrink: 0;" title="Click to view full snapshot">
+                <div style="flex: 1; min-width: 0;">
+                  <div style="color: #ff6b81; font-size: 0.78rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${escapeHtml(ev.reason)}
+                  </div>
+                  <div style="color: #aab4c8; font-size: 0.7rem; font-family: monospace; margin-top: 2px;">
+                    ⏰ ${ev.time} ${ev.returnTime ? `➔ ${ev.returnTime}` : ''} | <strong style="color: #f59e0b;">${ev.durationSec > 0 ? `${ev.durationSec}s away` : 'Logged'}</strong>
+                  </div>
+                </div>
+              </div>
+            `).join('') : violationLogs.map(log => `
+              <div style="background: rgba(0, 0, 0, 0.4); border-radius: 6px; padding: 0.45rem; color: #ff6b81; font-size: 0.75rem; font-family: monospace;">
+                ⚠️ ${escapeHtml(log)}
+              </div>
+            `).join('')}
+          </div>
+        `}
       </div>
 
       <!-- Live Lockout Countdown Card -->
@@ -668,17 +714,37 @@ async function initFaceAIModel() {
 
 // Preload COCO-SSD object detection model in background (Secondary Phone Detection)
 async function initObjectAIModel() {
-  if (window.cocoSsd && !cocoSsdModel && !isCocoLoading) {
-    try {
-      isCocoLoading = true;
-      cocoSsdModel = await window.cocoSsd.load();
-      console.log("✅ COCO-SSD Object AI Model (Phone Detection) Loaded Successfully!");
-    } catch (err) {
-      console.warn("COCO-SSD load notice:", err);
-    } finally {
-      isCocoLoading = false;
-    }
+  if (cocoSsdModel || isCocoLoading) return cocoSsdModel;
+  if (!window.cocoSsd) {
+    console.warn("COCO-SSD library script not yet loaded, will retry...");
+    return null;
   }
+
+  try {
+    isCocoLoading = true;
+    console.log("⏳ Preloading High-Precision COCO-SSD Object AI Model...");
+    try {
+      cocoSsdModel = await window.cocoSsd.load({ base: 'mobilenet_v2' });
+      console.log("✅ High-Precision COCO-SSD MobileNet-V2 Loaded Successfully!");
+    } catch (e) {
+      cocoSsdModel = await window.cocoSsd.load();
+      console.log("✅ Standard COCO-SSD Model Loaded Successfully!");
+    }
+
+    // Warm up GPU / WebGL shaders with blank canvas to eliminate first-frame latency
+    try {
+      const dummy = document.createElement('canvas');
+      dummy.width = 300;
+      dummy.height = 240;
+      await cocoSsdModel.detect(dummy, 5, 0.5);
+      console.log("🔥 AI Phone Detection GPU Shaders Warmed Up!");
+    } catch (e) {}
+  } catch (err) {
+    console.warn("COCO-SSD load notice:", err);
+  } finally {
+    isCocoLoading = false;
+  }
+  return cocoSsdModel;
 }
 
 // 1. Open User Webcam / Mobile Front Camera
@@ -970,48 +1036,75 @@ function startAIProctorLoop() {
     if (!state.examStarted || state.examSubmitted || state.isPhoneLockActive) return;
     if (isProctorAnalyzing) return;
 
+    // Use proctor stream or fallback to face stream
     const proctorVideo = document.getElementById('proctor-video-stream');
-    if (!proctorVideo || !proctorVideo.videoWidth) return;
+    const faceVideo = document.getElementById('face-video');
+    const video = (proctorVideo && proctorVideo.videoWidth > 0) ? proctorVideo : ((faceVideo && faceVideo.videoWidth > 0) ? faceVideo : null);
+
+    if (!video) {
+      if (proctorVideo && state.cameraStream && proctorVideo.paused) {
+        proctorVideo.play().catch(() => {});
+      }
+      return;
+    }
 
     isProctorAnalyzing = true;
     try {
-      await checkFrameForPhoneViolation(proctorVideo);
+      await checkFrameForPhoneViolation(video);
     } catch (err) {
       console.warn("AI Proctor frame check notice:", err);
     } finally {
       isProctorAnalyzing = false;
     }
-  }, 650); // High-frequency 650ms check for instant detection
+  }, 450); // Ultra-responsive 450ms continuous scan
 }
 
 async function checkFrameForPhoneViolation(video) {
   if (!cocoSsdModel && !blazefaceModel) {
-    // Attempt background load if not ready
     initObjectAIModel();
     initFaceAIModel();
     return;
   }
 
-  // 1. Check for secondary mobile phones using COCO-SSD
+  // 1. Check for secondary mobile phones, cameras, remotes, tablets using COCO-SSD
   if (cocoSsdModel) {
     try {
-      const predictions = await cocoSsdModel.detect(video);
+      // Pass maxNumBoxes: 30, minScore: 0.15 so COCO-SSD returns all detections without internal filtering
+      const predictions = await cocoSsdModel.detect(video, 30, 0.15);
       if (predictions && predictions.length > 0) {
         let phoneFound = null;
         let personCount = 0;
 
         for (const p of predictions) {
-          // Detect phone / camera / tablet / secondary screen
-          // Lowered threshold to 0.26 for cell phones to catch angled or top-held phones instantly
-          if (p.class === 'cell phone' && p.score >= 0.26) {
-            phoneFound = p;
+          const cls = (p.class || '').toLowerCase();
+          const score = p.score || 0;
+
+          // 1. Primary cell phone detection (ultra-sensitive threshold: 0.18)
+          if (cls === 'cell phone' && score >= 0.18) {
+            phoneFound = { ...p, detectedType: 'Mobile Phone' };
             break;
           }
-          if ((p.class === 'camera' || p.class === 'remote' || p.class === 'laptop' || p.class === 'tablet') && p.score >= 0.30) {
-            phoneFound = p;
+
+          // 2. Remote / Handheld device (many phones held in hand or seen from back are classified as remote)
+          if (cls === 'remote' && score >= 0.20) {
+            phoneFound = { ...p, detectedType: 'Smartphone / Remote Device' };
             break;
           }
-          if (p.class === 'person' && p.score >= 0.60) {
+
+          // 3. Secondary screens: TV, Laptop, Tablet, Monitor
+          if ((cls === 'tv' || cls === 'laptop') && score >= 0.22) {
+            phoneFound = { ...p, detectedType: 'Secondary Screen / Tablet' };
+            break;
+          }
+
+          // 4. Cheating books / notes / printed papers
+          if (cls === 'book' && score >= 0.32) {
+            phoneFound = { ...p, detectedType: 'Cheating Material / Book' };
+            break;
+          }
+
+          // Count people in frame
+          if (cls === 'person' && score >= 0.55) {
             personCount++;
           }
         }
@@ -1019,7 +1112,7 @@ async function checkFrameForPhoneViolation(video) {
         if (phoneFound) {
           captureEvidenceAndLockExam(
             'SECONDARY_PHONE_DETECTED',
-            `Dusra Mobile Phone / Device (${phoneFound.class.toUpperCase()} - ${Math.round(phoneFound.score * 100)}% Match) Detect Hua!`,
+            `Dusra Mobile Phone / Device (${phoneFound.detectedType} - ${Math.round(phoneFound.score * 100)}% Match) Detect Hua!`,
             video,
             phoneFound
           );
@@ -1298,11 +1391,11 @@ function isFullScreenActive() {
             document.msFullscreenElement);
 }
 
-function captureViolationSnapshot(reason) {
+function captureViolationSnapshot(reason, durationSec, departureTime, returnTime) {
   const video = document.getElementById('proctor-video-stream') || document.getElementById('face-video');
   const canvas = document.createElement('canvas');
-  canvas.width = 480;
-  canvas.height = 360;
+  canvas.width = 540;
+  canvas.height = 405;
   const ctx = canvas.getContext('2d');
 
   if (video && video.videoWidth) {
@@ -1312,39 +1405,71 @@ function captureViolationSnapshot(reason) {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.restore();
   } else {
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#0a0f1d';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#ef4444';
     ctx.font = 'bold 22px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('🚨 RED FLAG VIOLATION', canvas.width / 2, canvas.height / 2 - 10);
+    ctx.fillText('🚨 SCREEN ESCAPE RECORDED', canvas.width / 2, canvas.height / 2 - 20);
     ctx.textAlign = 'left';
   }
 
-  // Red Header Alert
-  ctx.fillStyle = 'rgba(235, 87, 87, 0.9)';
-  ctx.fillRect(0, 0, canvas.width, 45);
+  // 1. Red Header Alert Banner
+  ctx.fillStyle = 'rgba(235, 87, 87, 0.94)';
+  ctx.fillRect(0, 0, canvas.width, 48);
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px Arial';
-  ctx.fillText('🚨 ' + reason.substring(0, 48), 12, 28);
+  ctx.font = 'bold 15px Arial';
+  ctx.fillText('🚨 ' + reason.substring(0, 52), 12, 30);
 
-  // Bottom Black Watermark
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-  ctx.fillRect(0, canvas.height - 32, canvas.width, 32);
+  // 2. High-Visibility Time & Escape Duration Badge baked into screenshot
+  if (durationSec !== undefined && durationSec > 0) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.88)';
+    ctx.fillRect(16, canvas.height - 110, canvas.width - 32, 68);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(16, canvas.height - 110, canvas.width - 32, 68);
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText(`⏱️ EXAM ESCAPE DURATION: ${durationSec} SECONDS`, 28, canvas.height - 80);
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '13px Arial';
+    ctx.fillText(`🕒 Left Screen: ${departureTime || '--'}  ➔  Returned: ${returnTime || '--'}`, 28, canvas.height - 54);
+  } else {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
+    ctx.fillRect(16, canvas.height - 95, canvas.width - 32, 52);
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(16, canvas.height - 95, canvas.width - 32, 52);
+
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 15px monospace';
+    const nowTimeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
+    ctx.fillText(`⏱️ SCREEN ESCAPE INITIATED: ${nowTimeStr}`, 28, canvas.height - 70);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px Arial';
+    ctx.fillText(`Out-of-exam stopwatch running... Return immediately!`, 28, canvas.height - 52);
+  }
+
+  // 3. Bottom Black Watermark Bar with candidate details & IST timestamp
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+  ctx.fillRect(0, canvas.height - 34, canvas.width, 34);
   ctx.fillStyle = '#00f2fe';
-  ctx.font = '12px monospace';
-  const timeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
-  ctx.fillText(`${state.student.name || 'Candidate'} (${state.student.rollNo || 'N/A'}) • ${timeStr}`, 12, canvas.height - 11);
+  ctx.font = 'bold 12px monospace';
+  const fullDateTimeStr = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  ctx.fillText(`${state.student.name || 'Candidate'} (${state.student.rollNo || 'N/A'}) • ${fullDateTimeStr}`, 12, canvas.height - 12);
 
-  return canvas.toDataURL('image/jpeg', 0.8);
+  return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 function recordViolationEvidence(reason) {
-  const snapshot = captureViolationSnapshot(reason);
   const timeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  const snapshot = captureViolationSnapshot(reason, 0, timeStr, null);
   const item = {
     id: Date.now(),
     time: timeStr,
+    returnTime: null,
     reason: reason,
     durationSec: 0,
     snapshot: snapshot
@@ -1361,11 +1486,23 @@ function handleEscapeReturn() {
   if (state.currentEscapeStartTime) {
     const elapsedSec = Math.max(1, Math.round((Date.now() - state.currentEscapeStartTime) / 1000));
     state.totalTimeAwaySeconds = (state.totalTimeAwaySeconds || 0) + elapsedSec;
+    const returnTimeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
+
     if (state.activeEvidenceItem) {
       state.activeEvidenceItem.durationSec = elapsedSec;
+      state.activeEvidenceItem.returnTime = returnTimeStr;
+
+      // Re-render and stamp exact escape duration baked into the image!
+      state.activeEvidenceItem.snapshot = captureViolationSnapshot(
+        state.activeEvidenceItem.reason,
+        elapsedSec,
+        state.activeEvidenceItem.time,
+        returnTimeStr
+      );
     }
-    logViolation(`Returned to Exam window after ${elapsedSec}s escape/absence.`);
-    showToast(`⚠️ Aap ${elapsedSec}s ke liye exam se bahar the! (Time Logged)`);
+
+    logViolation(`Returned to Exam after ${elapsedSec}s escape (Left: ${state.activeEvidenceItem?.time || '--'} - Return: ${returnTimeStr})`);
+    showToast(`⚠️ Aap ${elapsedSec}s ke liye exam se bahar the! (Time & Snapshot Saved)`);
     state.currentEscapeStartTime = null;
     state.activeEvidenceItem = null;
   }
@@ -1403,24 +1540,42 @@ function handleVisibilityChange() {
   if (!state.examStarted || state.examSubmitted) return;
 
   if (document.hidden || document.visibilityState === 'hidden') {
+    // 1. Physically hide quiz from render tree to block screengrabs
+    const quizGrid = document.getElementById('quiz-main-section');
+    if (quizGrid) quizGrid.style.display = 'none';
+
+    // 2. Show dedicated pitch-black shield
+    const shield = document.getElementById('screenshot-blackout-shield');
+    if (shield) shield.style.display = 'flex';
     document.body.classList.add('screen-blur-blackout');
+    clearClipboard();
+
     recordViolationEvidence("Tab Switch / App in Background");
     registerTabSwitchViolation("Tab Switch / App Switched to Background");
   } else {
-    document.body.classList.remove('screen-blur-blackout');
+    dismissScreenshotShield();
     handleEscapeReturn();
   }
 }
 
 function handleWindowBlur() {
   if (!state.examStarted || state.examSubmitted) return;
+  // 1. Physically hide quiz from render tree
+  const quizGrid = document.getElementById('quiz-main-section');
+  if (quizGrid) quizGrid.style.display = 'none';
+
+  // 2. Show dedicated pitch-black shield
+  const shield = document.getElementById('screenshot-blackout-shield');
+  if (shield) shield.style.display = 'flex';
   document.body.classList.add('screen-blur-blackout');
+  clearClipboard();
+
   recordViolationEvidence("Window Lost Focus / Outside App Clicked");
   registerTabSwitchViolation("Window Lost Focus / External Application Activated");
 }
 
 window.addEventListener('focus', () => {
-  document.body.classList.remove('screen-blur-blackout');
+  dismissScreenshotShield();
   handleEscapeReturn();
 });
 
@@ -1470,28 +1625,44 @@ function updateWarningUI() {
 function triggerScreenshotProtection(reason) {
   if (!state.examStarted || state.examSubmitted) return;
 
-  // 1. Immediately black out and blur entire screen to block screen capture
+  // 1. Physically hide the quiz container from render tree
+  const quizGrid = document.getElementById('quiz-main-section');
+  if (quizGrid) quizGrid.style.display = 'none';
+
+  // 2. Show dedicated high-priority pitch-black shield
+  const shield = document.getElementById('screenshot-blackout-shield');
+  if (shield) shield.style.display = 'flex';
   document.body.classList.add('screen-blur-blackout');
 
-  // 2. Wipe clipboard contents immediately
+  // 3. Purge clipboard contents immediately
   clearClipboard();
 
-  // 3. Play alarm tone
+  // 4. Play alert alarm tone
   playBeepSound();
 
-  // 4. Record violation evidence snapshot with timestamp
+  // 5. Record violation evidence snapshot with timestamp
   recordViolationEvidence(`[SCREENSHOT BLOCKED] ${reason}`);
 
-  // 5. Register red flag violation & toast
+  // 6. Register red flag violation & toast
   registerTabSwitchViolation(`Screenshot Attempt Detected (${reason})`);
   showToast(`🚫 SCREENSHOT BLOCKED! Screenshot lena sakht mana hai.`);
 
-  // Keep screen blacked out for 2 seconds to spoil any OS buffer/screenshot attempt
+  // Auto-restore after 2.5 seconds if user is in window
   setTimeout(() => {
     if (!document.hidden && document.hasFocus() && !state.isPhoneLockActive) {
-      document.body.classList.remove('screen-blur-blackout');
+      dismissScreenshotShield();
     }
-  }, 2000);
+  }, 2500);
+}
+
+function dismissScreenshotShield() {
+  const shield = document.getElementById('screenshot-blackout-shield');
+  if (shield) shield.style.display = 'none';
+  document.body.classList.remove('screen-blur-blackout');
+  const quizGrid = document.getElementById('quiz-main-section');
+  if (quizGrid && state.examStarted && !state.examSubmitted && !state.isPhoneLockActive) {
+    quizGrid.style.display = 'grid';
+  }
 }
 
 function setupAntiCheatListeners() {
@@ -2070,7 +2241,11 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
     percentage: percentage,
     candidatePhoto: state.candidatePhoto || '',
     formattedTimeTaken: formattedTimeTaken,
-    status: status
+    status: status,
+    warningCount: state.warningCount || 0,
+    totalTimeAwaySeconds: state.totalTimeAwaySeconds || 0,
+    violationLogs: state.violationLogs || [],
+    violationEvidenceList: state.violationEvidenceList || []
   };
   try {
     localStorage.setItem(LAST_ATTEMPT_KEY, JSON.stringify(attemptInfo));
@@ -2194,13 +2369,30 @@ function processFinalSubmission(payload, reason) {
 }
 
 function openEvidenceLightbox(src) {
-  const modal = document.getElementById('evidence-lightbox-modal');
-  const img = document.getElementById('lightbox-img');
+  let modal = document.getElementById('evidence-lightbox-modal');
+  let img = document.getElementById('lightbox-img');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'evidence-lightbox-modal';
+    modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:2147483647; align-items:center; justify-content:center; padding:1.5rem; flex-direction:column; backdrop-filter:blur(10px);';
+    modal.innerHTML = `
+      <div style="position:relative; max-width:92vw; max-height:88vh; text-align:center;">
+        <img id="lightbox-img" src="" style="max-width:100%; max-height:78vh; border-radius:8px; border:2px solid #00f2fe; box-shadow:0 0 35px rgba(0,242,254,0.35); display:block; margin:0 auto;" alt="Evidence Snapshot">
+        <button type="button" onclick="document.getElementById('evidence-lightbox-modal').style.display='none'" style="margin-top:1rem; background:#eb5757; color:#fff; border:none; padding:0.65rem 1.6rem; font-weight:bold; border-radius:4px; cursor:pointer; font-size:0.92rem; box-shadow:0 4px 15px rgba(235,87,87,0.4);">
+          ❌ Close Preview
+        </button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    img = modal.querySelector('#lightbox-img');
+  }
   if (modal && img) {
     img.src = src;
     modal.style.display = 'flex';
   }
 }
+window.openEvidenceLightbox = openEvidenceLightbox;
+window.dismissScreenshotShield = dismissScreenshotShield;
 
 let hasSentGoogleSheet = false;
 

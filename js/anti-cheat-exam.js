@@ -24,7 +24,7 @@ const CONFIG = {
   // Format: 'YYYY-MM-DDTHH:MM:SS'  (24-hour, Local time IST)
   // Set to null to disable time-lock (quiz always open)
   // Example: '2026-09-17T10:00:00'  → quiz opens at 10:00 AM today
-  quizStartTime: '2026-09-17T10:00:00',
+  quizStartTime: '2026-09-17T07:38:00',
 };
 
 // Exam State

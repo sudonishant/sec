@@ -635,6 +635,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initUI();
   setupAntiCheatListeners();
+
+  // Pre-warm AI models in background for zero-delay detection
+  initFaceAIModel();
+  initObjectAIModel();
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -977,13 +981,14 @@ function startAIProctorLoop() {
     } finally {
       isProctorAnalyzing = false;
     }
-  }, 1800); // Check frame every 1.8 seconds
+  }, 650); // High-frequency 650ms check for instant detection
 }
 
 async function checkFrameForPhoneViolation(video) {
   if (!cocoSsdModel && !blazefaceModel) {
     // Attempt background load if not ready
     initObjectAIModel();
+    initFaceAIModel();
     return;
   }
 
@@ -997,7 +1002,12 @@ async function checkFrameForPhoneViolation(video) {
 
         for (const p of predictions) {
           // Detect phone / camera / tablet / secondary screen
-          if ((p.class === 'cell phone' || p.class === 'camera' || p.class === 'remote') && p.score >= 0.45) {
+          // Lowered threshold to 0.26 for cell phones to catch angled or top-held phones instantly
+          if (p.class === 'cell phone' && p.score >= 0.26) {
+            phoneFound = p;
+            break;
+          }
+          if ((p.class === 'camera' || p.class === 'remote' || p.class === 'laptop' || p.class === 'tablet') && p.score >= 0.30) {
             phoneFound = p;
             break;
           }
@@ -1009,8 +1019,9 @@ async function checkFrameForPhoneViolation(video) {
         if (phoneFound) {
           captureEvidenceAndLockExam(
             'SECONDARY_PHONE_DETECTED',
-            `Dusra Mobile Phone / Camera (${Math.round(phoneFound.score * 100)}% Confidence) Detect Hua!`,
-            video
+            `Dusra Mobile Phone / Device (${phoneFound.class.toUpperCase()} - ${Math.round(phoneFound.score * 100)}% Match) Detect Hua!`,
+            video,
+            phoneFound
           );
           return;
         }
@@ -1019,7 +1030,8 @@ async function checkFrameForPhoneViolation(video) {
           captureEvidenceAndLockExam(
             'MULTIPLE_PERSONS_DETECTED',
             'Ek se zyada log screen ke samne detect hue!',
-            video
+            video,
+            null
           );
           return;
         }
@@ -1037,18 +1049,20 @@ async function checkFrameForPhoneViolation(video) {
         captureEvidenceAndLockExam(
           'MULTIPLE_FACES_DETECTED',
           'Frame me 2 ya usse zyada chehre dikh rahe hain!',
-          video
+          video,
+          null,
+          faces
         );
       }
     } catch (err) {}
   }
 }
 
-function captureEvidenceAndLockExam(type, reasonText, video) {
+function captureEvidenceAndLockExam(type, reasonText, video, detectedObj, detectedFaces) {
   if (state.isPhoneLockActive || state.examSubmitted) return;
   state.isPhoneLockActive = true;
 
-  // Create evidence snapshot with red border, timestamp, student info
+  // Create evidence snapshot with bounding box, red border, timestamp, student info
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth || 640;
   canvas.height = video.videoHeight || 480;
@@ -1061,16 +1075,91 @@ function captureEvidenceAndLockExam(type, reasonText, video) {
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   ctx.restore();
 
+  // If a secondary phone/device was detected, draw high-visibility target box
+  if (detectedObj && detectedObj.bbox) {
+    const [bx, by, bw, bh] = detectedObj.bbox;
+    // Map bounding box to mirrored canvas coordinates
+    const drawX = Math.max(0, canvas.width - (bx + bw));
+    const drawY = Math.max(0, by);
+
+    // Glowing red border
+    ctx.strokeStyle = '#ff0033';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(drawX, drawY, bw, bh);
+
+    // Corner bracket markers
+    const cornerLen = Math.min(22, bw / 3, bh / 3);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#ffff00';
+    // Top-Left
+    ctx.beginPath();
+    ctx.moveTo(drawX, drawY + cornerLen);
+    ctx.lineTo(drawX, drawY);
+    ctx.lineTo(drawX + cornerLen, drawY);
+    ctx.stroke();
+    // Top-Right
+    ctx.beginPath();
+    ctx.moveTo(drawX + bw - cornerLen, drawY);
+    ctx.lineTo(drawX + bw, drawY);
+    ctx.lineTo(drawX + bw, drawY + cornerLen);
+    ctx.stroke();
+    // Bottom-Left
+    ctx.beginPath();
+    ctx.moveTo(drawX, drawY + bh - cornerLen);
+    ctx.lineTo(drawX, drawY + bh);
+    ctx.lineTo(drawX + cornerLen, drawY + bh);
+    ctx.stroke();
+    // Bottom-Right
+    ctx.beginPath();
+    ctx.moveTo(drawX + bw - cornerLen, drawY + bh);
+    ctx.lineTo(drawX + bw, drawY + bh);
+    ctx.lineTo(drawX + bw, drawY + bh - cornerLen);
+    ctx.stroke();
+
+    // Prominent Target Tag
+    const tagText = `📱 ${detectedObj.class.toUpperCase()} DETECTED (${Math.round(detectedObj.score * 100)}%)`;
+    ctx.font = 'bold 14px Arial';
+    const tagWidth = ctx.measureText(tagText).width;
+    const tagY = drawY > 32 ? drawY - 28 : drawY + 6;
+    ctx.fillStyle = 'rgba(255, 0, 51, 0.95)';
+    ctx.fillRect(drawX, tagY, tagWidth + 18, 26);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(tagText, drawX + 8, tagY + 18);
+  }
+
+  // If multiple faces detected by BlazeFace, outline faces
+  if (detectedFaces && detectedFaces.length > 1) {
+    detectedFaces.forEach((face, idx) => {
+      if (face.topLeft && face.bottomRight) {
+        const fx1 = face.topLeft[0];
+        const fy1 = face.topLeft[1];
+        const fx2 = face.bottomRight[0];
+        const fy2 = face.bottomRight[1];
+        const fw = fx2 - fx1;
+        const fh = fy2 - fy1;
+        const drawX = Math.max(0, canvas.width - (fx1 + fw));
+        const drawY = Math.max(0, fy1);
+
+        ctx.strokeStyle = idx === 0 ? '#00f2fe' : '#ff0033';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(drawX, drawY, fw, fh);
+        ctx.fillStyle = idx === 0 ? '#00f2fe' : '#ff0033';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(idx === 0 ? 'Primary Candidate' : `Extra Face #${idx + 1}`, drawX + 4, drawY > 20 ? drawY - 6 : drawY + 16);
+      }
+    });
+  }
+
   // Overlay Red Evidence Header Banner
-  ctx.fillStyle = 'rgba(235, 87, 87, 0.9)';
+  ctx.fillStyle = 'rgba(235, 87, 87, 0.92)';
   ctx.fillRect(0, 0, canvas.width, 48);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 16px Arial';
-  ctx.fillText('🚨 VIOLATION EVIDENCE: ' + reasonText, 14, 30);
+  ctx.fillText('🚨 AI PROCTOR CRITICAL LOCK: ' + reasonText, 14, 30);
 
   // Overlay Black Footer with candidate details & timestamp
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
   ctx.fillRect(0, canvas.height - 36, canvas.width, 36);
 
   ctx.fillStyle = '#00f2fe';
@@ -1079,6 +1168,19 @@ function captureEvidenceAndLockExam(type, reasonText, video) {
   ctx.fillText(`${state.student.name || 'Candidate'} (${state.student.rollNo || 'N/A'}) | ${timeString}`, 14, canvas.height - 13);
 
   const evidenceDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  // Record in violationEvidenceList and track escape/lockout duration
+  const timeStr = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  const evidenceItem = {
+    id: Date.now(),
+    time: timeStr,
+    reason: `📱 [AI PROCTOR] ${reasonText}`,
+    durationSec: 0,
+    snapshot: evidenceDataUrl
+  };
+  state.violationEvidenceList.push(evidenceItem);
+  state.activeEvidenceItem = evidenceItem;
+  state.currentEscapeStartTime = Date.now();
 
   // Update violation logs & warning
   state.warningCount++;
@@ -1115,6 +1217,7 @@ function unlockPhoneViolation() {
 
   if (MASTER_UNLOCK_PASSWORDS.includes(entered)) {
     state.isPhoneLockActive = false;
+    handleEscapeReturn(); // Calculate and log exact duration exam was locked!
     if (modal) modal.style.display = 'none';
     showToast("🔓 Exam Unlocked by Invigilator Master Key!");
   } else {
@@ -1158,6 +1261,17 @@ function initUI() {
   const input = document.getElementById('apps-script-url-input');
   if (input && CONFIG.googleSheetWebAppUrl) {
     input.value = CONFIG.googleSheetWebAppUrl;
+  }
+
+  // Enter key support for Phone Violation Master Unlock
+  const phonePassInput = document.getElementById('phone-master-pass-input');
+  if (phonePassInput) {
+    phonePassInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        unlockPhoneViolation();
+      }
+    });
   }
 }
 
@@ -1353,6 +1467,33 @@ function updateWarningUI() {
 // -------------------------------------------------------------
 // 3. SCREENSHOT, DEVTOOLS & KEYBOARD SHORTCUT BLOCKERS
 // -------------------------------------------------------------
+function triggerScreenshotProtection(reason) {
+  if (!state.examStarted || state.examSubmitted) return;
+
+  // 1. Immediately black out and blur entire screen to block screen capture
+  document.body.classList.add('screen-blur-blackout');
+
+  // 2. Wipe clipboard contents immediately
+  clearClipboard();
+
+  // 3. Play alarm tone
+  playBeepSound();
+
+  // 4. Record violation evidence snapshot with timestamp
+  recordViolationEvidence(`[SCREENSHOT BLOCKED] ${reason}`);
+
+  // 5. Register red flag violation & toast
+  registerTabSwitchViolation(`Screenshot Attempt Detected (${reason})`);
+  showToast(`🚫 SCREENSHOT BLOCKED! Screenshot lena sakht mana hai.`);
+
+  // Keep screen blacked out for 2 seconds to spoil any OS buffer/screenshot attempt
+  setTimeout(() => {
+    if (!document.hidden && document.hasFocus() && !state.isPhoneLockActive) {
+      document.body.classList.remove('screen-blur-blackout');
+    }
+  }, 2000);
+}
+
 function setupAntiCheatListeners() {
   // Fullscreen change events across browsers
   document.addEventListener('fullscreenchange', handleFullScreenChange);
@@ -1381,16 +1522,35 @@ function setupAntiCheatListeners() {
     const ctrl = e.ctrlKey || e.metaKey;
     const shift = e.shiftKey;
 
-    // Block PrintScreen
-    if (key === 'PrintScreen' || e.code === 'PrintScreen') {
+    // 1. Block PrintScreen Key
+    if (key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44) {
       e.preventDefault();
-      clearClipboard();
-      showToast("📸 Screenshot Blocked! PrintScreen key disabled.");
-      logViolation("Attempted PrintScreen (Screenshot)");
+      triggerScreenshotProtection("PrintScreen Key Pressed");
       return false;
     }
 
-    // Block F12 (DevTools)
+    // 2. Block Windows Snipping Tool (Win + Shift + S or Ctrl + Shift + S)
+    if ((ctrl || e.metaKey) && shift && (key === 's' || key === 'S' || e.code === 'KeyS')) {
+      e.preventDefault();
+      triggerScreenshotProtection("Snipping Tool Shortcut (Win/Ctrl+Shift+S)");
+      return false;
+    }
+
+    // 3. Block macOS Screenshot Shortcuts (Cmd + Shift + 3 / 4 / 5)
+    if (e.metaKey && shift && (key === '3' || key === '4' || key === '5' || e.code === 'Digit3' || e.code === 'Digit4' || e.code === 'Digit5')) {
+      e.preventDefault();
+      triggerScreenshotProtection("macOS Screenshot Shortcut (Cmd+Shift+3/4/5)");
+      return false;
+    }
+
+    // 4. Block Page Print / PDF Export (Ctrl + P / Cmd + P)
+    if (ctrl && (key === 'p' || key === 'P' || e.code === 'KeyP')) {
+      e.preventDefault();
+      triggerScreenshotProtection("Page Print Shortcut (Ctrl+P)");
+      return false;
+    }
+
+    // 5. Block F12 (DevTools)
     if (key === 'F12' || e.keyCode === 123) {
       e.preventDefault();
       showToast("🚫 Developer Tools (F12) Disabled!");
@@ -1398,15 +1558,15 @@ function setupAntiCheatListeners() {
       return false;
     }
 
-    // Block Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+P (Print), Ctrl+U (View Source), Ctrl+S (Save), Ctrl+A (Select All)
-    if (ctrl && (key === 'c' || key === 'C' || key === 'v' || key === 'V' || key === 'p' || key === 'P' || key === 'u' || key === 'U' || key === 's' || key === 'S' || key === 'a' || key === 'A')) {
+    // 6. Block Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+U (View Source), Ctrl+S (Save), Ctrl+A (Select All)
+    if (ctrl && (key === 'c' || key === 'C' || key === 'v' || key === 'V' || key === 'u' || key === 'U' || key === 's' || key === 'S' || key === 'a' || key === 'A')) {
       e.preventDefault();
       showToast(`❌ Shortcut Ctrl+${key.toUpperCase()} Disabled!`);
       logViolation(`Attempted Shortcut Ctrl+${key.toUpperCase()}`);
       return false;
     }
 
-    // Block DevTools Shortcuts: Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+    // 7. Block DevTools Shortcuts: Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
     if (ctrl && shift && (key === 'I' || key === 'i' || key === 'J' || key === 'j' || key === 'C' || key === 'c')) {
       e.preventDefault();
       showToast("🚫 Inspect Element Disabled!");
@@ -1415,8 +1575,27 @@ function setupAntiCheatListeners() {
     }
   });
 
-  // Block Copy, Cut, Paste, Text Selection, Dragging
-  ['copy', 'cut', 'paste', 'selectstart', 'dragstart'].forEach(eventType => {
+  // Secondary PrintScreen release listener (in case OS swallowed keydown)
+  window.addEventListener('keyup', (e) => {
+    if (!state.examStarted || state.examSubmitted) return;
+    const key = e.key || e.code;
+    if (key === 'PrintScreen' || e.code === 'PrintScreen' || e.keyCode === 44) {
+      e.preventDefault();
+      triggerScreenshotProtection("PrintScreen Key Released (Screenshot Detected)");
+    }
+  });
+
+  // Block Content Copying & trigger blackout
+  document.addEventListener('copy', (e) => {
+    if (state.examStarted && !state.examSubmitted) {
+      e.preventDefault();
+      clearClipboard();
+      triggerScreenshotProtection("Attempted Content Copying / Clipboard Extraction");
+    }
+  });
+
+  // Block Cut, Paste, Text Selection, Dragging
+  ['cut', 'paste', 'selectstart', 'dragstart'].forEach(eventType => {
     document.addEventListener(eventType, (e) => {
       if (state.examStarted && !state.examSubmitted) {
         e.preventDefault();

@@ -228,16 +228,19 @@ body {
 /* Anti-Screenshot Screen Blur Blackout Overlay */
 body.screen-blur-blackout #quiz-main-section,
 body.screen-blur-blackout .question-box,
-body.screen-blur-blackout .main-layout {
-  filter: blur(80px) brightness(0) !important;
-  -webkit-filter: blur(80px) brightness(0) !important;
-  opacity: 0.001 !important;
+body.screen-blur-blackout .main-layout,
+body.screen-blur-blackout .exam-header,
+body.screen-blur-blackout .header-monitor-bar {
+  filter: blur(100px) brightness(0) !important;
+  -webkit-filter: blur(100px) brightness(0) !important;
+  opacity: 0.0001 !important;
   visibility: hidden !important;
   pointer-events: none !important;
 }
 
 body.screen-blur-blackout::after {
-  content: "🚨 SCREENSHOT PROHIBITED! CONTENT PROTECTED 🚨";
+  content: "🚨 SCREENSHOT BLOCKED & PROHIBITED! 🚨\A\AContent protected by SCE Supaul Anti-Cheat Security System.\AYour screenshot attempt has been flagged and recorded.";
+  white-space: pre-line;
   position: fixed;
   top: 0;
   left: 0;
@@ -248,12 +251,12 @@ body.screen-blur-blackout::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  font-weight: bold;
+  font-size: 1.4rem;
+  font-weight: 800;
   letter-spacing: 1px;
   text-align: center;
   padding: 2rem;
-  z-index: 9999999;
+  z-index: 99999999;
 }
 
 /* Anti-Print Blocker */

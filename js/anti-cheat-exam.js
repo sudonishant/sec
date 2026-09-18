@@ -21,10 +21,8 @@ const CONFIG = {
   examDurationMinutes: 15,
 
   // ── Quiz Scheduled Start Time ──────────────────────────────
-  // Format: 'YYYY-MM-DDTHH:MM:SS'  (24-hour, Local time IST)
-  // Set to null to disable time-lock (quiz always open)
-  // Example: '2026-09-17T10:00:00'  → quiz opens at 10:00 AM today
-  quizStartTime: '2026-09-17T07:38:00',
+  // Set to null to allow exam to be taken anytime without start-lock
+  quizStartTime: null,
 };
 
 // Exam State
@@ -171,42 +169,60 @@ let QUESTION_BANK = [
 // INTERNET / NETWORK TIME SYNC & DEVICE TAMPER PROTECTION
 // ─────────────────────────────────────────────────────────────
 let networkTimeOffset = 0; // Difference between real Internet time and device time
-const MAX_ALLOWED_TIME_DRIFT_SEC = 120; // 2 minutes max allowed mismatch
+const MAX_ALLOWED_TIME_DRIFT_SEC = 300; // 5 minutes tolerance to accommodate small carrier clock skews
 
 function getSyncedNow() {
   return Date.now() + networkTimeOffset;
 }
 
-// Fetch real network atomic time from server / edge / API
+// Fetch real network atomic time with strict 2.5-second timeout
 async function fetchInternetTime() {
-  // Method 1: Edge Server / Vercel / Node HTTP Date Header (Super Fast & Exact)
+  const fetchWithTimeout = async (url, options = {}, timeoutMs = 2500) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(id);
+      return res;
+    } catch (e) {
+      clearTimeout(id);
+      return null;
+    }
+  };
+
+  // Method 1: Current Server / Edge Header
   try {
-    const res = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
-    const dateHeader = res.headers.get('date');
-    if (dateHeader) {
-      const serverMs = new Date(dateHeader).getTime();
-      if (!isNaN(serverMs) && serverMs > 0) {
-        return serverMs;
+    const res = await fetchWithTimeout(window.location.href, { method: 'HEAD', cache: 'no-store' }, 2000);
+    if (res && res.headers) {
+      const dateHeader = res.headers.get('date');
+      if (dateHeader) {
+        const serverMs = new Date(dateHeader).getTime();
+        if (!isNaN(serverMs) && serverMs > 0) return serverMs;
       }
     }
   } catch (err) {}
 
-  // Method 2: Node backend health API if local
+  // Method 2: Local Node backend API if hosted locally
   try {
-    const res = await fetch('/api/health', { cache: 'no-store' });
-    const data = await res.json();
-    if (data && data.timestamp) {
-      const serverMs = new Date(data.timestamp).getTime();
-      if (!isNaN(serverMs) && serverMs > 0) return serverMs;
+    const res = await fetchWithTimeout('/api/health', { cache: 'no-store' }, 1500);
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data && data.timestamp) {
+        const serverMs = new Date(data.timestamp).getTime();
+        if (!isNaN(serverMs) && serverMs > 0) return serverMs;
+      }
     }
   } catch (err) {}
 
-  // Method 3: Public World Time API fallback
+  // Method 3: TimeAPI.io public endpoint
   try {
-    const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata', { cache: 'no-store' });
-    const data = await res.json();
-    if (data && data.unixtime) {
-      return data.unixtime * 1000;
+    const res = await fetchWithTimeout('https://timeapi.io/api/time/current/zone?timeZone=Asia%2FKolkata', { cache: 'no-store' }, 2500);
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data && data.dateTime) {
+        const parsed = new Date(data.dateTime).getTime();
+        if (!isNaN(parsed) && parsed > 0) return parsed;
+      }
     }
   } catch (err) {}
 
@@ -215,22 +231,26 @@ async function fetchInternetTime() {
 
 // Verify Device Time against Network Time
 async function verifyTimeSync() {
-  const networkMs = await fetchInternetTime();
-  if (!networkMs) {
-    // If offline or completely unreachable, fallback to device clock
-    console.warn("Internet time unreachable, using local clock.");
-    return true;
-  }
+  try {
+    const networkMs = await fetchInternetTime();
+    if (!networkMs) {
+      // If offline or remote API timed out, seamlessly fallback to device clock
+      console.warn("Network time sync unreachable, continuing with local clock.");
+      return true;
+    }
 
-  const deviceMs = Date.now();
-  networkTimeOffset = networkMs - deviceMs;
-  const driftSeconds = Math.abs(Math.round((networkMs - deviceMs) / 1000));
+    const deviceMs = Date.now();
+    networkTimeOffset = networkMs - deviceMs;
+    const driftSeconds = Math.abs(Math.round((networkMs - deviceMs) / 1000));
 
-  console.log(`[TIME SYNC] Device: ${new Date(deviceMs).toLocaleTimeString()}, Internet: ${new Date(networkMs).toLocaleTimeString()}, Drift: ${driftSeconds}s`);
+    console.log(`[TIME SYNC] Device: ${new Date(deviceMs).toLocaleTimeString()}, Internet: ${new Date(networkMs).toLocaleTimeString()}, Drift: ${driftSeconds}s`);
 
-  if (driftSeconds > MAX_ALLOWED_TIME_DRIFT_SEC) {
-    showTimeMismatchScreen(deviceMs, networkMs, driftSeconds);
-    return false; // Block quiz
+    if (driftSeconds > MAX_ALLOWED_TIME_DRIFT_SEC) {
+      showTimeMismatchScreen(deviceMs, networkMs, driftSeconds);
+      return false; // Block quiz
+    }
+  } catch (err) {
+    console.warn("Time sync check exception:", err);
   }
 
   return true; // Time verified & synced

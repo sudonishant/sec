@@ -701,6 +701,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initUI();
   setupAntiCheatListeners();
+  dismissScreenshotShield();
 
   // Pre-warm AI models in background for zero-delay detection
   initFaceAIModel();
@@ -1687,6 +1688,8 @@ function handleFullScreenChange() {
 // -------------------------------------------------------------
 function handleVisibilityChange() {
   if (!state.examStarted || state.examSubmitted) return;
+  // Grace period during initial exam load / fullscreen transition
+  if (state.examStartTime && (Date.now() - state.examStartTime < 3000)) return;
 
   if (document.hidden || document.visibilityState === 'hidden') {
     // 1. Physically hide quiz from render tree to block screengrabs
@@ -1709,6 +1712,11 @@ function handleVisibilityChange() {
 
 function handleWindowBlur() {
   if (!state.examStarted || state.examSubmitted) return;
+  // Grace period during initial exam load / fullscreen transition
+  if (state.examStartTime && (Date.now() - state.examStartTime < 3000)) return;
+  // If the document still has focus, this is an internal DOM focus change, not window blur
+  if (document.hasFocus()) return;
+
   // 1. Physically hide quiz from render tree
   const quizGrid = document.getElementById('quiz-main-section');
   if (quizGrid) quizGrid.style.display = 'none';
@@ -1773,6 +1781,8 @@ function updateWarningUI() {
 // -------------------------------------------------------------
 function triggerScreenshotProtection(reason) {
   if (!state.examStarted || state.examSubmitted) return;
+  // Grace period during initial exam load / fullscreen transition
+  if (state.examStartTime && (Date.now() - state.examStartTime < 3000)) return;
 
   // 1. Physically hide the quiz container from render tree
   const quizGrid = document.getElementById('quiz-main-section');
@@ -1808,9 +1818,12 @@ function dismissScreenshotShield() {
   const shield = document.getElementById('screenshot-blackout-shield');
   if (shield) shield.style.display = 'none';
   document.body.classList.remove('screen-blur-blackout');
-  const quizGrid = document.getElementById('quiz-main-section');
-  if (quizGrid && state.examStarted && !state.examSubmitted && !state.isPhoneLockActive) {
-    quizGrid.style.display = 'grid';
+  if (state.examStarted && !state.examSubmitted && !state.isPhoneLockActive) {
+    const quizGrid = document.getElementById('quiz-main-section');
+    if (quizGrid) quizGrid.style.display = 'grid';
+  } else if (!state.examStarted) {
+    const regCard = document.getElementById('registration-card');
+    if (regCard) regCard.style.display = 'block';
   }
 }
 
@@ -1840,16 +1853,19 @@ function setupAntiCheatListeners() {
     const keyCode = e.keyCode || e.which || 0;
     const ctrl = e.ctrlKey || e.metaKey;
     const shift = e.shiftKey;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     // 1. Mobile Hardware Buttons (Volume Down, Volume Up, Mute, Power, Camera, Snapshot)
     // On Android, Power + Volume Down triggers AudioVolumeDown key event immediately
     if (
-      key === 'AudioVolumeDown' || key === 'VolumeDown' || keyCode === 174 || keyCode === 25 ||
-      key === 'AudioVolumeUp' || key === 'VolumeUp' || keyCode === 175 || keyCode === 24 ||
-      key === 'AudioVolumeMute' || key === 'VolumeMute' || keyCode === 173 || keyCode === 164 ||
-      key === 'Power' || keyCode === 26 ||
-      key === 'Camera' || keyCode === 27 ||
-      key === 'Snapshot'
+      isMobile && (
+        key === 'AudioVolumeDown' || key === 'VolumeDown' || keyCode === 174 || keyCode === 25 ||
+        key === 'AudioVolumeUp' || key === 'VolumeUp' || keyCode === 175 || keyCode === 24 ||
+        key === 'AudioVolumeMute' || key === 'VolumeMute' || keyCode === 173 || keyCode === 164 ||
+        key === 'Power' || keyCode === 26 ||
+        key === 'Camera' || keyCode === 27 ||
+        key === 'Snapshot'
+      )
     ) {
       return 'Mobile Hardware Button (Volume/Power/Camera)';
     }
@@ -1936,21 +1952,13 @@ function setupAntiCheatListeners() {
   document.addEventListener('keyup', handleKeyUp, { capture: true });
   window.addEventListener('keyup', handleKeyUp, { capture: true });
 
-  // Additional focus/visibility listeners for mobile notification shade / quick settings
-  window.addEventListener('focusout', handleWindowBlur);
+  // Additional focus/visibility listeners for mobile notification shade / page hide
   window.addEventListener('pagehide', handleWindowBlur);
-  document.addEventListener('freeze', handleWindowBlur);
-
-  // Standard NoPrint.js AutoBlur: Protects screen if cursor leaves viewport to activate capture tools
-  document.addEventListener('mouseleave', () => {
-    if (state.examStarted && !state.examSubmitted) {
-      handleWindowBlur();
-    }
-  });
 
   // Detect split-screen or external overlay resize on mobile
   window.addEventListener('resize', () => {
     if (!state.examStarted || state.examSubmitted) return;
+    if (state.examStartTime && (Date.now() - state.examStartTime < 3000)) return;
     if (window.innerHeight < 280 || window.innerWidth < 280) {
       triggerScreenshotProtection("Split-Screen / Floating Window Detected");
     }
@@ -1981,7 +1989,7 @@ function setupAntiCheatListeners() {
 
   const handleTouchStart = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
-    if (e.touches && e.touches.length >= 2) {
+    if (e.touches && e.touches.length >= 3) {
       e.preventDefault();
       e.stopPropagation();
       triggerScreenshotProtection("Multi-touch Gesture / 3-Finger Screenshot Blocked");
@@ -1996,7 +2004,7 @@ function setupAntiCheatListeners() {
 
   const handleTouchMove = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
-    if (e.touches && e.touches.length >= 2) {
+    if (e.touches && e.touches.length >= 3) {
       e.preventDefault();
       e.stopPropagation();
       triggerScreenshotProtection("Multi-touch Gesture / 3-Finger Screenshot Blocked");
@@ -2037,9 +2045,6 @@ function setupAntiCheatListeners() {
     touchStartTime = 0;
   };
 
-  window.addEventListener('touchstart', handleTouchStart, { capture: true, passive: false });
-  window.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
-  window.addEventListener('touchend', handleTouchEnd, { capture: false, passive: true });
   document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: false });
   document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
   document.addEventListener('touchend', handleTouchEnd, { capture: false, passive: true });
@@ -2166,6 +2171,8 @@ function startExamProcess() {
 
   state.student = { name, rollNo, branch, subject };
   state.examStarted = true;
+  state.examStartTime = Date.now();
+  dismissScreenshotShield();
 
   // Connect live camera to AI Proctor video feed & start detection loop
   const proctorVideo = document.getElementById('proctor-video-stream');

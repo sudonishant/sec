@@ -244,8 +244,7 @@ body.screen-blur-blackout * {
   pointer-events: none !important;
 }
 
-body.screen-blur-blackout #screenshot-blackout-shield,
-body.screen-blur-blackout #screenshot-blackout-shield * {
+body.screen-blur-blackout #screenshot-blackout-shield {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -253,6 +252,14 @@ body.screen-blur-blackout #screenshot-blackout-shield * {
   -webkit-filter: none !important;
   pointer-events: all !important;
   z-index: 2147483647 !important;
+}
+
+body.screen-blur-blackout #screenshot-blackout-shield * {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  pointer-events: all !important;
 }
 
 /* Anti-Print Blocker */

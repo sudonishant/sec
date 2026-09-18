@@ -1,107 +1,107 @@
 [
   {
     "id": 1,
-    "question": "Engineers' Day in India is celebrated on 15th September to honour which great engineer?",
+    "question": "Engineers' Day in India is celebrated on 15th September to honour which legendary engineer?",
     "options": ["A.P.J. Abdul Kalam", "M. Visvesvaraya", "Homi J. Bhabha", "C.V. Raman"],
     "correct": 1,
     "points": 1
   },
   {
     "id": 2,
-    "question": "Sir M. Visvesvaraya was awarded which of India's highest civilian honour?",
-    "options": ["Padma Shri", "Padma Bhushan", "Bharat Ratna", "Padma Vibhushan"],
+    "question": "Which Indian space mission made history by successfully landing near the Moon's South Pole in 2023?",
+    "options": ["Mangalyaan", "Chandrayaan-2", "Chandrayaan-3", "Aditya-L1"],
     "correct": 2,
     "points": 1
   },
   {
     "id": 3,
-    "question": "Which engineering marvel was designed by M. Visvesvaraya — a dam that is still iconic today?",
-    "options": ["Bhakra Nangal Dam", "Hirakud Dam", "Krishna Raja Sagara (KRS) Dam", "Tehri Dam"],
-    "correct": 2,
+    "question": "Who is widely recognized as the 'Father of Modern Computer Science and Artificial Intelligence'?",
+    "options": ["Charles Babbage", "Alan Turing", "John von Neumann", "Ada Lovelace"],
+    "correct": 1,
     "points": 1
   },
   {
     "id": 4,
-    "question": "What does 'LED' stand for?",
+    "question": "What does the abbreviation 'LED' stand for in electronics?",
     "options": ["Light Emitting Diode", "Low Energy Display", "Light Energy Device", "Liquid Emitting Diode"],
     "correct": 0,
     "points": 1
   },
   {
     "id": 5,
-    "question": "Which branch of engineering deals with the design and development of aircraft and spacecraft?",
-    "options": ["Mechanical Engineering", "Civil Engineering", "Aerospace Engineering", "Electrical Engineering"],
-    "correct": 2,
+    "question": "In robotics and mechatronics, what device converts electrical energy directly into mechanical motion?",
+    "options": ["Sensor", "Actuator", "Rectifier", "Capacitor"],
+    "correct": 1,
     "points": 1
   },
   {
     "id": 6,
-    "question": "What does 'WiFi' stand for?",
+    "question": "What does 'WiFi' technically stand for?",
     "options": ["Wireless Filing", "Wide Frequency Internet", "Wireless Fidelity", "Wire-Free Internet"],
     "correct": 2,
     "points": 1
   },
   {
     "id": 7,
-    "question": "How many bits are there in 1 Byte?",
-    "options": ["4", "8", "16", "32"],
+    "question": "In computer architecture, exactly how many bits constitute one single Byte?",
+    "options": ["4 bits", "8 bits", "16 bits", "32 bits"],
     "correct": 1,
     "points": 1
   },
   {
     "id": 8,
-    "question": "Which of the following is an input device?",
-    "options": ["Monitor", "Printer", "Speaker", "Keyboard"],
-    "correct": 3,
+    "question": "Which revolutionary neural network architecture introduced by Google in 2017 powers modern Large Language Models (LLMs)?",
+    "options": ["Recurrent Neural Network (RNN)", "Convolutional Neural Network (CNN)", "Transformer", "Support Vector Machine (SVM)"],
+    "correct": 2,
     "points": 1
   },
   {
     "id": 9,
-    "question": "What does 'UPS' stand for in computing and electronics?",
+    "question": "What does 'UPS' stand for in power systems and computing?",
     "options": ["Universal Power Supply", "Uninterruptible Power Supply", "Unified Protection System", "Unlimited Power Source"],
     "correct": 1,
     "points": 1
   },
   {
     "id": 10,
-    "question": "Which material is known as the 'wonder material' of modern engineering due to its exceptional strength and conductivity?",
-    "options": ["Carbon Fibre", "Graphene", "Titanium", "Silicon"],
+    "question": "Which carbon allotrope, consisting of a single layer of atoms, is called the 'wonder material' for its extreme strength and conductivity?",
+    "options": ["Carbon Fibre", "Graphene", "Diamond", "Fullerene"],
     "correct": 1,
     "points": 1
   },
   {
     "id": 11,
-    "question": "Which technology made it possible to store and process information using two discrete states such as 0 and 1?",
-    "options": ["Analog Technology", "Binary Digital Technology", "Quantum Computing", "Optical Computing"],
-    "correct": 1,
-    "points": 1
-  },
-  {
-    "id": 12,
-    "question": "UPI, which has become a major part of India's digital payments ecosystem, was launched for public use in which year?",
-    "options": ["2014", "2015", "2016", "2018"],
+    "question": "Which mathematical number system using only digits 0 and 1 forms the foundational logic for all digital electronic computers?",
+    "options": ["Octal", "Hexadecimal", "Binary", "Decimal"],
     "correct": 2,
     "points": 1
   },
   {
+    "id": 12,
+    "question": "In cybersecurity, which security mechanism requires two different authentication factors before granting account access?",
+    "options": ["Single Sign-On (SSO)", "Two-Factor Authentication (2FA)", "Captcha Verification", "End-to-End Encryption"],
+    "correct": 1,
+    "points": 1
+  },
+  {
     "id": 13,
-    "question": "Which technology is the foundation of modern computer chips and is heavily connected with AI, 5G and IoT hardware?",
-    "options": ["Nanotechnology", "Biotechnology", "Semiconductor Technology", "Quantum Technology"],
+    "question": "Which rechargeable battery technology is the primary power source for modern Electric Vehicles (EVs) and smartphones?",
+    "options": ["Lead-Acid Battery", "Nickel-Cadmium Battery", "Lithium-Ion Battery", "Zinc-Carbon Battery"],
     "correct": 2,
     "points": 1
   },
   {
     "id": 14,
-    "question": "Which major semiconductor-focused technology event is scheduled to take place in New Delhi from 17–19 September 2026?",
-    "options": ["India Tech Summit 2026", "Semicon India 2026", "Chip India Expo 2026", "India Electronics Week 2026"],
-    "correct": 1,
+    "question": "In cloud computing, which model provides virtualized computing resources (servers, storage, networking) over the internet on-demand?",
+    "options": ["Infrastructure as a Service (IaaS)", "Platform as a Service (PaaS)", "Software as a Service (SaaS)", "Function as a Service (FaaS)"],
+    "correct": 0,
     "points": 1
   },
   {
     "id": 15,
-    "question": "At the 2026 BRICS Summit in New Delhi, which emerging technology initiative was proposed to promote cooperation among BRICS countries?",
-    "options": ["BRICS Digital Currency Alliance", "BRICS AI Cooperation Framework", "BRICS Semiconductor Partnership", "BRICS Cloud Computing Grid"],
-    "correct": 1,
+    "question": "In quantum computing, what is the basic unit of quantum information that can exist in superposition as both 0 and 1 simultaneously?",
+    "options": ["Qubit", "Quantum Byte", "Posit", "Superbit"],
+    "correct": 0,
     "points": 1
   }
 ]

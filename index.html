@@ -23,32 +23,32 @@
   <div id="dynamic-watermark-container"></div>
 
   <!-- Official SCE Supaul Top Header Bar -->
-  <header class="exam-header" style="background: #ffffff; border-bottom: 1px solid #d0d7de; padding: 0.6rem 1.5rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100;">
+  <header class="exam-header" style="background: rgba(10, 14, 26, 0.95); border-bottom: 1px solid rgba(0, 242, 254, 0.3); padding: 0.65rem 1.5rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.6); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(15px);">
     <div style="display: flex; align-items: center; gap: 0.85rem;">
       <img src="assets/logo.png" alt="Technical Club Logo" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #0275d8; box-shadow: 0 2px 8px rgba(2, 117, 216, 0.3); background: #ffffff; padding: 2px; flex-shrink: 0;">
       <div>
-        <h1 style="font-family: Arial, sans-serif; font-size: 1.35rem; font-weight: 900; color: #003366; margin: 0; line-height: 1.1; letter-spacing: 0.5px;">
-          TECHNICAL CLUB <span style="color: #0275d8; font-weight: 900;">• SCE SUPAUL</span>
+        <h1 style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 1.35rem; font-weight: 900; color: #ffffff; margin: 0; line-height: 1.1; letter-spacing: 0.5px;">
+          TECHNICAL CLUB <span style="color: #00f2fe; font-weight: 900; text-shadow: 0 0 12px rgba(0, 242, 254, 0.6);">• SCE SUPAUL</span>
         </h1>
-        <p style="font-size: 0.85rem; color: #222222; font-weight: 700; margin-top: 2px; line-height: 1.2;">
+        <p style="font-size: 0.82rem; color: #94a3b8; font-weight: 600; margin-top: 2px; line-height: 1.2;">
           Supaul College of Engineering (BEU Patna • Govt. of Bihar)
         </p>
       </div>
     </div>
 
     <!-- Candidate & Monitor Header Card (Hidden on starting registration page) -->
-    <div style="display: none; align-items: center; gap: 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 0.4rem 0.85rem;" id="header-monitor-bar">
-      <div style="width: 38px; height: 38px; background: #6c757d; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; font-weight: bold; overflow: hidden; flex-shrink: 0; border: 1px solid #0275d8;">
+    <div style="display: none; align-items: center; gap: 1rem; background: rgba(16, 23, 38, 0.9); border: 1px solid rgba(0, 242, 254, 0.35); border-radius: 8px; padding: 0.45rem 1rem; box-shadow: 0 0 15px rgba(0,242,254,0.15);" id="header-monitor-bar">
+      <div style="width: 40px; height: 40px; background: #111827; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem; font-weight: bold; overflow: hidden; flex-shrink: 0; border: 1.5px solid #00f2fe; box-shadow: 0 0 8px rgba(0,242,254,0.4);">
         <img id="header-candidate-photo" style="display: none; width: 100%; height: 100%; object-fit: cover;" alt="Candidate">
         <span id="header-photo-icon">👤</span>
       </div>
-      <div style="font-size: 0.8rem; color: #333; line-height: 1.3;">
-        <div>Candidate Name : <strong style="color: #d9534f;" id="nta-candidate-name">[Your Name]</strong></div>
-        <div>Remaining Time : <span style="background: #0275d8; color: #fff; padding: 0.1rem 0.5rem; border-radius: 3px; font-weight: bold; font-family: monospace; font-size: 0.9rem;" id="timer-text">15:00</span></div>
+      <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.35;">
+        <div>Candidate: <strong style="color: #00f2fe; font-weight: 800;" id="nta-candidate-name">[Your Name]</strong></div>
+        <div style="margin-top: 2px;">Time Left: <span style="background: rgba(0, 242, 254, 0.15); border: 1px solid #00f2fe; color: #00f2fe; padding: 0.1rem 0.55rem; border-radius: 4px; font-weight: 800; font-family: monospace; font-size: 0.95rem; box-shadow: 0 0 10px rgba(0,242,254,0.3);" id="timer-text">15:00</span></div>
       </div>
-      <div style="font-size: 0.78rem; font-weight: bold; color: #d9534f; border-left: 1px solid #ccc; padding-left: 0.75rem;">
-        Red Flags: <span id="warning-count-text" style="font-size: 0.9rem;">0 / 5</span>
-        <div class="warning-dots" id="warning-dots-bar" style="margin-top: 3px;"></div>
+      <div style="font-size: 0.8rem; font-weight: 800; color: #ff3366; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 0.85rem;">
+        Red Flags: <span id="warning-count-text" style="font-size: 0.95rem;">0 / 5</span>
+        <div class="warning-dots" id="warning-dots-bar" style="margin-top: 4px;"></div>
       </div>
       <!-- Live AI Proctor Selfie Camera Feed -->
       <div style="display: flex; flex-direction: column; align-items: center; border-left: 1px solid #ccc; padding-left: 0.75rem;">
@@ -58,16 +58,16 @@
     </div>
   </header>
 
-  <!-- Official Orange Navigation Bar -->
-  <div class="orange-nav-bar" style="background: #f47b20; padding: 0.5rem 1.5rem; display: flex; align-items: center; justify-content: space-between; color: #fff; font-weight: bold; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-    <div style="display: flex; align-items: center; gap: 0.6rem;">
-      <span style="background: #ffffff; color: #003366; padding: 0.35rem 0.85rem; border-radius: 3px; font-weight: 900; font-size: 0.88rem; text-transform: uppercase; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">⚡ TECHNICAL CLUB</span>
-      <span style="background: #0275d8; color: #ffffff; padding: 0.35rem 0.85rem; border-radius: 3px; font-size: 0.85rem; font-weight: 800;">SCE SUPAUL</span>
-      <span style="background: #27ae60; color: #ffffff; padding: 0.35rem 0.85rem; border-radius: 3px; font-size: 0.85rem; font-weight: 800;">OFFICIAL EXAM PORTAL</span>
+  <!-- Official Cyber Navigation Bar -->
+  <div class="orange-nav-bar" style="background: rgba(13, 19, 33, 0.95); border-bottom: 1px solid rgba(0, 242, 254, 0.25); padding: 0.55rem 1.5rem; display: flex; align-items: center; justify-content: space-between; color: #fff; font-weight: bold; font-size: 0.88rem; box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(12px);">
+    <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+      <span style="background: rgba(0, 242, 254, 0.15); border: 1px solid #00f2fe; color: #00f2fe; padding: 0.3rem 0.85rem; border-radius: 4px; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; box-shadow: 0 0 10px rgba(0,242,254,0.25);">⚡ TECHNICAL CLUB</span>
+      <span style="background: rgba(79, 172, 254, 0.15); border: 1px solid #4facfe; color: #4facfe; padding: 0.3rem 0.85rem; border-radius: 4px; font-size: 0.82rem; font-weight: 800;">SCE SUPAUL</span>
+      <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; padding: 0.3rem 0.85rem; border-radius: 4px; font-size: 0.82rem; font-weight: 800;">OFFICIAL EXAM PORTAL</span>
     </div>
-    <div style="font-size: 0.82rem; display: flex; align-items: center; gap: 0.5rem;">
-      <span>Paper Language:</span>
-      <select style="padding: 0.2rem 0.5rem; border-radius: 2px; border: none; font-weight: bold; background: #fff; color: #333;"><option>English</option><option>Hindi</option></select>
+    <div style="font-size: 0.82rem; display: flex; align-items: center; gap: 0.5rem; color: #94a3b8;">
+      <span>Language:</span>
+      <select style="padding: 0.25rem 0.6rem; border-radius: 4px; border: 1px solid rgba(0, 242, 254, 0.3); font-weight: bold; background: #0a0e1a; color: #00f2fe; outline: none;"><option>English</option><option>Hindi</option></select>
     </div>
   </div>
 
@@ -75,36 +75,36 @@
   <main class="main-layout">
 
     <!-- STEP 1: Minimal Clean Student Registration Screen -->
-    <div class="auth-card" id="registration-card" style="max-width: 540px; margin: 2rem auto; padding: 2rem; background: #ffffff; border: 1px solid #d0d7de; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
+    <div class="auth-card" id="registration-card" style="max-width: 540px; margin: 2rem auto; padding: 2.2rem; background: rgba(16, 23, 38, 0.9); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 20px rgba(0, 242, 254, 0.15); backdrop-filter: blur(20px);">
       
       <!-- Top Brand Header Banner -->
       <div style="text-align: center; margin-bottom: 1.75rem;">
-        <img src="assets/logo.png" alt="Technical Club Logo" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #0275d8; box-shadow: 0 4px 15px rgba(2, 117, 216, 0.35); background: #ffffff; padding: 4px; margin-bottom: 0.85rem; display: inline-block;">
-        <h2 style="font-family: Arial, sans-serif; font-size: 2.1rem; font-weight: 900; margin-bottom: 0.35rem; color: #003366 !important; -webkit-text-fill-color: #003366 !important; background: none !important; letter-spacing: 0.5px;">
+        <img src="assets/logo.png" alt="Technical Club Logo" style="width: 84px; height: 84px; border-radius: 50%; border: 2.5px solid #00f2fe; box-shadow: 0 0 25px rgba(0, 242, 254, 0.5); background: #ffffff; padding: 4px; margin-bottom: 0.85rem; display: inline-block;">
+        <h2 style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 2.1rem; font-weight: 900; margin-bottom: 0.35rem; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; letter-spacing: 0.5px;">
           TECHNICAL CLUB
         </h2>
-        <div style="font-size: 1.05rem; color: #0275d8; font-weight: 900; margin-bottom: 0.25rem;">
+        <div style="font-size: 1.05rem; color: #00f2fe; font-weight: 900; margin-bottom: 0.25rem; text-shadow: 0 0 12px rgba(0, 242, 254, 0.5);">
           Supaul College of Engineering (BEU Patna • Govt. of Bihar)
         </div>
-        <div style="font-size: 0.88rem; color: #333333; font-weight: 700; background: #e8f4f8; padding: 0.35rem 0.85rem; border-radius: 20px; display: inline-block; margin-top: 6px; border: 1px solid #b8daff;">
+        <div style="font-size: 0.88rem; color: #cbd5e1; font-weight: 700; background: rgba(0, 242, 254, 0.1); padding: 0.35rem 0.95rem; border-radius: 20px; display: inline-block; margin-top: 6px; border: 1px solid rgba(0, 242, 254, 0.3);">
           "— we make things easy —"
         </div>
       </div>
 
       <form id="registration-form">
         <div class="form-group" style="margin-bottom: 1.1rem;">
-          <label for="student-name" style="font-size: 0.88rem; color: #333; font-weight: bold;"><i data-lucide="user" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #0275d8;"></i> Student Full Name *</label>
-          <input type="text" id="student-name" class="form-control" placeholder="Enter your full name" style="padding: 0.85rem 1rem; font-size: 0.95rem;" required>
+          <label for="student-name" style="font-size: 0.88rem; color: #cbd5e1; font-weight: 700;"><i data-lucide="user" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #00f2fe;"></i> Student Full Name *</label>
+          <input type="text" id="student-name" class="form-control" placeholder="Enter your full name" style="padding: 0.85rem 1rem; font-size: 0.95rem; background: rgba(11, 16, 29, 0.85) !important; border: 1px solid rgba(0, 242, 254, 0.3) !important; color: #ffffff !important;" required>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.1rem;">
-          <label for="student-roll" style="font-size: 0.88rem; color: #333; font-weight: bold;"><i data-lucide="hash" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #0275d8;"></i> Roll / Registration No *</label>
-          <input type="text" id="student-roll" class="form-control" placeholder="e.g. 21105123001" style="padding: 0.85rem 1rem; font-size: 0.95rem;" required>
+          <label for="student-roll" style="font-size: 0.88rem; color: #cbd5e1; font-weight: 700;"><i data-lucide="hash" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #00f2fe;"></i> Roll / Registration No *</label>
+          <input type="text" id="student-roll" class="form-control" placeholder="e.g. 21105123001" style="padding: 0.85rem 1rem; font-size: 0.95rem; background: rgba(11, 16, 29, 0.85) !important; border: 1px solid rgba(0, 242, 254, 0.3) !important; color: #ffffff !important;" required>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label for="student-branch" style="font-size: 0.88rem; color: #333; font-weight: bold;"><i data-lucide="layers" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #0275d8;"></i> Engineering Branch *</label>
-          <select id="student-branch" class="form-control" style="padding: 0.85rem 1rem; font-size: 0.92rem;">
+          <label for="student-branch" style="font-size: 0.88rem; color: #cbd5e1; font-weight: 700;"><i data-lucide="layers" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #00f2fe;"></i> Engineering Branch *</label>
+          <select id="student-branch" class="form-control" style="padding: 0.85rem 1rem; font-size: 0.92rem; background: rgba(11, 16, 29, 0.85) !important; border: 1px solid rgba(0, 242, 254, 0.3) !important; color: #ffffff !important;">
             <option value="Computer Science & Engineering (CSE)">Computer Science & Engineering (CSE)</option>
             <option value="CSE - Artificial Intelligence (CSE-AI)">CSE - Artificial Intelligence (CSE-AI)</option>
             <option value="Mathematics & Computing">Mathematics & Computing</option>
@@ -116,9 +116,9 @@
         </div>
 
         <!-- Mandatory Live Face Verification Box -->
-        <div class="face-verification-card" style="margin-bottom: 1.5rem; background: #f8f9fa; border: 2px dashed #0275d8; border-radius: 6px; padding: 1.2rem; text-align: center;">
+        <div class="face-verification-card" style="margin-bottom: 1.5rem; background: rgba(11, 16, 29, 0.8); border: 2px dashed rgba(0, 242, 254, 0.4); border-radius: 6px; padding: 1.2rem; text-align: center;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-            <label style="font-size: 0.9rem; color: #003366; font-weight: bold; margin: 0; display: flex; align-items: center; gap: 5px;">
+            <label style="font-size: 0.9rem; color: #00f2fe; font-weight: bold; margin: 0; display: flex; align-items: center; gap: 5px;">
               📷 Real Face Verification <span style="color: #eb5757;">*</span>
             </label>
             <span id="face-badge" style="font-size: 0.72rem; background: #eb5757; color: #fff; padding: 0.2rem 0.6rem; border-radius: 12px; font-weight: bold; letter-spacing: 0.5px;">
@@ -144,7 +144,7 @@
           <canvas id="face-canvas" style="display: none;"></canvas>
 
           <!-- Instructions & Status Text -->
-          <p id="face-status-text" style="font-size: 0.82rem; color: #555; margin-bottom: 0.75rem; line-height: 1.4; min-height: 24px;">
+          <p id="face-status-text" style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 0.75rem; line-height: 1.4; min-height: 24px;">
             Exam dene ke liye apna <strong>Real Face</strong> verify karna anivarya hai.
           </p>
 
@@ -171,126 +171,138 @@
       </form>
     </div>
 
-    <!-- STEP 2: Active Anti-Cheat Quiz Engine Interface (Compact Pure White Layout) -->
-    <div class="quiz-grid" id="quiz-main-section" style="display: none; grid-template-columns: 1fr 290px; gap: 1.25rem;">
+    <!-- STEP 2: Active Anti-Cheat Quiz Engine Interface (Cyber Dark Glassmorphism) -->
+    <div class="quiz-grid" id="quiz-main-section" style="display: none; grid-template-columns: 1fr 310px; gap: 1.5rem;">
       
       <!-- Left Column: Question Box & Action Buttons -->
-      <div class="question-box" style="background: #ffffff; border: 1px solid #d0d7de; border-radius: 4px; padding: 1.5rem; color: #111827; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 2px solid #003366; padding-bottom: 0.5rem;">
-          <h3 style="font-size: 1.25rem; font-weight: bold; color: #003366; margin: 0;" id="q-number-title">Question 1:</h3>
-          <span style="font-size: 0.82rem; background: #e8f4f8; color: #0275d8; padding: 0.2rem 0.6rem; border-radius: 3px; font-weight: bold;">+1 Point</span>
+      <div class="question-box" style="background: rgba(16, 23, 38, 0.9); border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 12px; padding: 1.85rem; color: #f8fafc; box-shadow: 0 10px 35px rgba(0,0,0,0.5), 0 0 20px rgba(0,242,254,0.08); backdrop-filter: blur(16px);">
+        
+        <!-- Progress Bar & Gesture Notification Pill -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="font-size: 0.75rem; color: #00f2fe; font-weight: 800; display: flex; align-items: center; gap: 6px; background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.25); padding: 0.25rem 0.65rem; border-radius: 20px;">
+            <span>👋 Hand Gestures: Swipe Left = Next | Swipe Right = Back</span>
+          </div>
+          <span style="font-size: 0.82rem; background: rgba(0, 242, 254, 0.12); color: #00f2fe; padding: 0.25rem 0.75rem; border-radius: 15px; font-weight: bold; border: 1px solid rgba(0, 242, 254, 0.3);">+1 Point</span>
         </div>
 
-        <div class="question-text" id="q-text-body" style="font-size: 1.15rem; color: #111; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.5;">
+        <div style="width: 100%; height: 5px; background: rgba(255, 255, 255, 0.08); border-radius: 10px; overflow: hidden; margin-bottom: 1.25rem;">
+          <div id="q-progress-fill" style="height: 100%; width: 6.67%; background: linear-gradient(90deg, #00f2fe, #4facfe, #9d4edd); border-radius: 10px; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(0,242,254,0.6);"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 0.65rem;">
+          <h3 style="font-size: 1.3rem; font-weight: 800; color: #00f2fe; margin: 0; text-shadow: 0 0 10px rgba(0,242,254,0.35);" id="q-number-title">Question 1:</h3>
+        </div>
+
+        <div class="question-text" id="q-text-body" style="font-size: 1.15rem; color: #f8fafc; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.6;">
           Loading question text...
         </div>
 
-        <div class="options-group" id="q-options-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
+        <div class="options-group" id="q-options-list" style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 2rem;">
           <!-- Options rendered dynamically by JS -->
         </div>
 
         <!-- Main Action Buttons Row -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.5rem; border-top: 1px solid #e0e0e0; padding-top: 1.1rem;">
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-            <button onclick="saveAndNext()" style="background: #0275d8; color: #ffffff; font-weight: bold; border: none; padding: 0.65rem 1.35rem; border-radius: 4px; cursor: pointer; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(2,117,216,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1.25rem;">
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+            <button onclick="saveAndNext()" style="background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #080c16; font-weight: 900; border: none; padding: 0.7rem 1.45rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; box-shadow: 0 0 15px rgba(0,242,254,0.4); transition: transform 0.15s ease;">
               💾 SAVE & NEXT
             </button>
-            <button onclick="markForReviewAndNext()" style="background: #9b51e0; color: #ffffff; font-weight: bold; border: none; padding: 0.65rem 1.1rem; border-radius: 4px; cursor: pointer; font-size: 0.88rem; box-shadow: 0 2px 6px rgba(155,81,224,0.25);">
+            <button onclick="markForReviewAndNext()" style="background: rgba(157, 78, 221, 0.18); color: #c084fc; border: 1px solid #9d4edd; font-weight: 800; padding: 0.7rem 1.25rem; border-radius: 6px; cursor: pointer; font-size: 0.88rem; box-shadow: 0 0 12px rgba(157, 78, 221, 0.25);">
               🟪 MARK FOR REVIEW & NEXT
             </button>
-            <button onclick="clearResponse()" style="background: #ffffff; color: #333333; border: 1px solid #cccccc; font-weight: bold; padding: 0.65rem 1.1rem; border-radius: 4px; cursor: pointer; font-size: 0.88rem;">
+            <button onclick="clearResponse()" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.15); font-weight: 700; padding: 0.7rem 1.15rem; border-radius: 6px; cursor: pointer; font-size: 0.88rem;">
               🧹 CLEAR RESPONSE
             </button>
           </div>
         </div>
 
         <!-- Navigation & Protected Submit Row -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; background: #f8f9fa; padding: 0.85rem 1rem; border-radius: 4px; border: 1px solid #e0e0e0; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; background: rgba(11, 16, 29, 0.8); padding: 0.95rem 1.2rem; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.2); flex-wrap: wrap; gap: 0.75rem;">
           <div style="display: flex; gap: 0.6rem;">
-            <button id="prev-q-btn" onclick="navigateQuestion(-1)" style="background: #ffffff; border: 1px solid #cccccc; color: #003366; padding: 0.5rem 1.25rem; font-weight: bold; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">
+            <button id="prev-q-btn" onclick="navigateQuestion(-1)" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(0, 242, 254, 0.35); color: #00f2fe; padding: 0.55rem 1.35rem; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 0.88rem; transition: all 0.2s ease;">
               &lt;&lt; BACK
             </button>
-            <button id="next-q-btn" onclick="saveAndNext()" style="background: #ffffff; border: 1px solid #0275d8; color: #0275d8; padding: 0.5rem 1.25rem; font-weight: bold; border-radius: 3px; cursor: pointer; font-size: 0.85rem;">
+            <button id="next-q-btn" onclick="saveAndNext()" style="background: rgba(0, 242, 254, 0.12); border: 1px solid #00f2fe; color: #00f2fe; padding: 0.55rem 1.35rem; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 0.88rem; box-shadow: 0 0 10px rgba(0,242,254,0.2);">
               NEXT &gt;&gt;
             </button>
           </div>
-          <button id="main-submit-btn" onclick="confirmAndSubmitExam()" style="background: #27ae60; color: #ffffff; font-weight: 900; border: none; padding: 0.6rem 1.6rem; border-radius: 4px; cursor: pointer; font-size: 0.92rem; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(39,174,96,0.3);">
+          <button id="main-submit-btn" onclick="confirmAndSubmitExam()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; font-weight: 900; border: none; padding: 0.65rem 1.75rem; border-radius: 6px; cursor: pointer; font-size: 0.95rem; letter-spacing: 0.5px; box-shadow: 0 0 18px rgba(16,185,129,0.45);">
             🚀 SUBMIT EXAM
           </button>
         </div>
       </div>
 
-      <!-- Right Column: Compact Pure White Question Palette Sidebar -->
-      <div class="palette-box" style="background: #ffffff; border: 1px solid #d0d7de; border-radius: 4px; padding: 0.85rem; color: #111; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: sticky; top: 80px; height: fit-content;">
+      <!-- Right Column: Cyber Question Palette Sidebar -->
+      <div class="palette-box" style="background: rgba(16, 23, 38, 0.9); border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 12px; padding: 1.15rem; color: #f8fafc; box-shadow: 0 10px 35px rgba(0,0,0,0.5), 0 0 20px rgba(0,242,254,0.08); position: sticky; top: 80px; height: fit-content; backdrop-filter: blur(16px);">
         <!-- Candidate info box inside palette sidebar -->
-        <div style="display: flex; align-items: center; gap: 0.65rem; background: #f8f9fa; border: 1px solid #e0e0e0; padding: 0.5rem 0.65rem; border-radius: 3px; margin-bottom: 0.75rem;">
-          <div style="width: 32px; height: 32px; background: #003366; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.95rem;">👤</div>
-          <div style="overflow: hidden; font-size: 0.8rem; line-height: 1.2;">
-            <strong style="color: #003366; display: block; font-weight: bold;" id="sidebar-student-name">Student Candidate</strong>
-            <span style="color: #666; font-size: 0.75rem;" id="sidebar-student-roll">Roll No: N/A</span>
+        <div style="display: flex; align-items: center; gap: 0.75rem; background: rgba(11, 16, 29, 0.7); border: 1px solid rgba(0, 242, 254, 0.2); padding: 0.6rem 0.8rem; border-radius: 8px; margin-bottom: 0.9rem;">
+          <div style="width: 36px; height: 36px; background: rgba(0, 242, 254, 0.15); border: 1px solid #00f2fe; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #00f2fe; font-size: 1rem; box-shadow: 0 0 8px rgba(0,242,254,0.3);">👤</div>
+          <div style="overflow: hidden; font-size: 0.82rem; line-height: 1.25;">
+            <strong style="color: #00f2fe; display: block; font-weight: bold;" id="sidebar-student-name">Student Candidate</strong>
+            <span style="color: #94a3b8; font-size: 0.75rem;" id="sidebar-student-roll">Roll No: N/A</span>
           </div>
         </div>
 
         <!-- 4 Legend Categories Box -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.72rem; margin-bottom: 0.85rem; background: #ffffff; padding: 0.6rem; border-radius: 3px; border: 1px solid #e0e0e0; font-weight: bold;">
-          <div style="display: flex; align-items: center; gap: 0.35rem;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #ffffff; border: 1px solid #ccc; border-radius: 2px; font-weight: bold; font-size: 0.7rem; color: #333;" id="count-not-visited">15</span>
-            <span style="color: #555;">Not Visited</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; font-size: 0.74rem; margin-bottom: 1rem; background: rgba(11, 16, 29, 0.65); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); font-weight: bold;">
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 20px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-weight: bold; font-size: 0.72rem; color: #94a3b8;" id="count-not-visited">15</span>
+            <span style="color: #94a3b8;">Not Visited</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.35rem;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #eb5757; color: #fff; border-radius: 6px 6px 2px 2px; font-weight: bold; font-size: 0.7rem;" id="count-not-answered">0</span>
-            <span style="color: #333;">Not Answered</span>
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 20px; background: #ff3366; color: #fff; border-radius: 4px; font-weight: bold; font-size: 0.72rem; box-shadow: 0 0 8px rgba(255,51,102,0.4);" id="count-not-answered">0</span>
+            <span style="color: #f8fafc;">Not Answered</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.35rem;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #27ae60; color: #fff; border-radius: 2px 2px 6px 6px; font-weight: bold; font-size: 0.7rem;" id="count-answered">0</span>
-            <span style="color: #333;">Answered</span>
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 20px; background: #00e676; color: #080c16; border-radius: 4px; font-weight: 900; font-size: 0.72rem; box-shadow: 0 0 8px rgba(0,230,118,0.4);" id="count-answered">0</span>
+            <span style="color: #f8fafc;">Answered</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.35rem;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; background: #9b51e0; color: #fff; border-radius: 50%; font-weight: bold; font-size: 0.7rem;" id="count-marked">0</span>
-            <span style="color: #333;">Marked Review</span>
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 20px; background: #9d4edd; color: #fff; border-radius: 4px; font-weight: bold; font-size: 0.72rem; box-shadow: 0 0 8px rgba(157,78,221,0.4);" id="count-marked">0</span>
+            <span style="color: #f8fafc;">Marked Review</span>
           </div>
         </div>
 
-        <h4 style="margin-bottom: 0.5rem; font-size: 0.82rem; color: #003366; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 0.35rem;">Question Palette:</h4>
-        <div class="palette-grid" id="question-palette-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; margin-bottom: 0.5rem;">
+        <h4 style="margin-bottom: 0.6rem; font-size: 0.85rem; color: #00f2fe; font-weight: 800; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px;">Question Palette:</h4>
+        <div class="palette-grid" id="question-palette-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.45rem; margin-bottom: 0.5rem;">
           <!-- Palette buttons rendered dynamically in 5 columns (3 rows of 5) -->
         </div>
       </div>
     </div>
 
-    <!-- STEP 3: Pure White High-Contrast Result Screen -->
-    <div class="result-card" id="result-screen-card" style="display: none; background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; padding: 2.5rem; max-width: 680px; margin: 2rem auto; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center;">
+    <!-- STEP 3: Cyber High-Contrast Result Screen -->
+    <div class="result-card" id="result-screen-card" style="display: none; background: rgba(16, 23, 38, 0.95); border: 1px solid rgba(0, 242, 254, 0.35); border-radius: 12px; padding: 2.5rem; max-width: 680px; margin: 2rem auto; box-shadow: 0 10px 40px rgba(0,0,0,0.7), 0 0 30px rgba(0, 242, 254, 0.15); text-align: center; backdrop-filter: blur(20px);">
 
-      <div class="modal-icon" style="border: 2px solid #0275d8; color: #0275d8; background: #e8f4f8; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 2rem; box-shadow: 0 4px 12px rgba(2,117,216,0.2);">
+      <div class="modal-icon" style="border: 2px solid #0275d8; color: #00f2fe; background: #e8f4f8; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 2rem; box-shadow: 0 4px 12px rgba(2,117,216,0.2);">
         🏆
       </div>
 
-      <h2 id="result-title" style="font-size: 1.9rem; color: #003366; font-weight: 900; margin-bottom: 0.35rem;">Examination Completed</h2>
+      <h2 id="result-title" style="font-size: 1.9rem; color: #00f2fe; font-weight: 900; margin-bottom: 0.35rem;">Examination Completed</h2>
       <p id="result-sub" style="color: #555555; font-size: 0.95rem; font-weight: 600; margin-bottom: 1.5rem;">Your responses and submit screen snapshot have been archived.</p>
 
       <!-- Giant Ultra-Clear High-Contrast Score Banner -->
-      <div style="background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f7 100%); border: 3px solid #0275d8; border-radius: 12px; padding: 1.25rem 2rem; margin: 1.5rem auto; max-width: 340px; box-shadow: 0 4px 15px rgba(2, 117, 216, 0.18);">
-        <div style="font-size: 0.85rem; font-weight: 900; color: #0275d8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.35rem;">FINAL SCORE</div>
-        <div class="score-num" id="res-score" style="font-family: Arial, sans-serif; font-size: 3.6rem; font-weight: 900; color: #003366; line-height: 1; letter-spacing: 1px;">0/15</div>
+      <div style="background: rgba(11, 16, 29, 0.9); border: 2px solid #00f2fe; border-radius: 16px; padding: 1.5rem 2rem; margin: 1.5rem auto; max-width: 340px; box-shadow: 0 0 25px rgba(0, 242, 254, 0.3);">
+        <div style="font-size: 0.85rem; font-weight: 900; color: #00f2fe; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.35rem;">FINAL SCORE</div>
+        <div class="score-num" id="res-score" style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 3.8rem; font-weight: 900; color: #ffffff; line-height: 1; letter-spacing: 1px; text-shadow: 0 0 20px rgba(0,242,254,0.6);">0/15</div>
       </div>
 
       <!-- Student Details Summary Grid -->
-      <div style="display: flex; justify-content: space-around; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; justify-content: space-around; background: rgba(11, 16, 29, 0.85); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 8px; padding: 1.1rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Student Name</span>
-          <strong id="res-student-name" style="color: #003366; font-size: 1.1rem; font-weight: 800;">-</strong>
+          <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; display: block; text-transform: uppercase;">Student Name</span>
+          <strong id="res-student-name" style="color: #ffffff; font-size: 1.1rem; font-weight: 800;">-</strong>
         </div>
         <div>
-          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Roll Number</span>
-          <strong id="res-roll-no" style="color: #0275d8; font-size: 1.1rem; font-weight: 800; font-family: monospace;">-</strong>
+          <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; display: block; text-transform: uppercase;">Roll Number</span>
+          <strong id="res-roll-no" style="color: #00f2fe; font-size: 1.1rem; font-weight: 800; font-family: monospace;">-</strong>
         </div>
         <div>
-          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Percentage</span>
-          <strong id="res-percentage" style="color: #27ae60; font-size: 1.1rem; font-weight: 900;">-</strong>
+          <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; display: block; text-transform: uppercase;">Percentage</span>
+          <strong id="res-percentage" style="color: #00e676; font-size: 1.1rem; font-weight: 900;">-</strong>
         </div>
         <div>
-          <span style="font-size: 0.8rem; color: #6c757d; font-weight: 700; display: block; text-transform: uppercase;">Violations</span>
-          <strong id="res-warnings" style="color: #d9534f; font-size: 1.1rem; font-weight: 900;">-</strong>
+          <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; display: block; text-transform: uppercase;">Violations</span>
+          <strong id="res-warnings" style="color: #ff3366; font-size: 1.1rem; font-weight: 900;">-</strong>
         </div>
       </div>
 
@@ -302,7 +314,7 @@
       <div id="res-escape-duration-banner" style="background: rgba(235, 87, 87, 0.08); border: 1.5px solid #eb5757; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; text-align: left;">
         <div>
           <strong style="color: #d9534f; font-size: 0.95rem; display: block;">⏱️ Exam Escape & Out-of-Screen Time:</strong>
-          <span style="color: #555; font-size: 0.8rem;">Kitna samay student test window se bahar / escape raha</span>
+          <span style="color: #94a3b8; font-size: 0.8rem;">Kitna samay student test window se bahar / escape raha</span>
         </div>
         <div id="res-total-away-time" style="color: #d9534f; font-size: 1.25rem; font-weight: 800; font-family: monospace;">
           0s
@@ -311,23 +323,23 @@
 
       <!-- Violation Logs Summary Table with Snapshots -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h4 style="font-size: 0.92rem; color: #003366; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin: 0;">
+        <h4 style="font-size: 0.92rem; color: #00f2fe; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin: 0;">
           🛡️ Anti-Cheat Audit Logs & Evidence Screenshots:
         </h4>
         <span id="res-evidence-count" style="font-size: 0.75rem; background: #fee2e2; color: #dc2626; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: bold;">0 Evidence</span>
       </div>
 
       <div style="overflow-x: auto;">
-        <table class="log-table" style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6; background: #ffffff;">
+        <table class="log-table" style="width: 100%; border-collapse: collapse; border: 1px solid rgba(0, 242, 254, 0.2); background: rgba(11, 16, 29, 0.9);">
           <thead>
-            <tr style="background: #f1f5f9; color: #334155; font-size: 0.82rem;">
-              <th style="padding: 0.6rem; border: 1px solid #cbd5e1; text-align: left; width: 85px;">Time</th>
-              <th style="padding: 0.6rem; border: 1px solid #cbd5e1; text-align: left;">Security Event</th>
-              <th style="padding: 0.6rem; border: 1px solid #cbd5e1; text-align: center; width: 125px;">Bahar Raha (Away)</th>
-              <th style="padding: 0.6rem; border: 1px solid #cbd5e1; text-align: center; width: 115px;">Captured Snapshot</th>
+            <tr style="background: rgba(0, 242, 254, 0.12); color: #00f2fe; font-size: 0.82rem;">
+              <th style="padding: 0.65rem; border: 1px solid rgba(0, 242, 254, 0.2); text-align: left; width: 85px;">Time</th>
+              <th style="padding: 0.65rem; border: 1px solid rgba(0, 242, 254, 0.2); text-align: left;">Security Event</th>
+              <th style="padding: 0.65rem; border: 1px solid rgba(0, 242, 254, 0.2); text-align: center; width: 125px;">Bahar Raha (Away)</th>
+              <th style="padding: 0.65rem; border: 1px solid rgba(0, 242, 254, 0.2); text-align: center; width: 115px;">Captured Snapshot</th>
             </tr>
           </thead>
-          <tbody id="violation-table-body" style="font-size: 0.84rem; color: #333333;">
+          <tbody id="violation-table-body" style="font-size: 0.84rem; color: #e2e8f0;">
             <!-- Filled by JS -->
           </tbody>
         </table>
@@ -342,7 +354,7 @@
       </div>
 
       <!-- Sync Status Indicator -->
-      <div id="sheet-sync-status" style="margin-top: 1.5rem; padding: 0.85rem; background: #e8f4f8; border-radius: 6px; border: 1px solid #b8daff; font-size: 0.9rem; color: #003366; font-weight: 700;">
+      <div id="sheet-sync-status" style="margin-top: 1.5rem; padding: 0.85rem; background: rgba(0, 242, 254, 0.1); border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.3); font-size: 0.9rem; color: #00f2fe; font-weight: 700; box-shadow: 0 0 15px rgba(0,242,254,0.15);">
         ⏳ Transmitting Exam Data & Submit Screen Snapshot...
       </div>
     </div>

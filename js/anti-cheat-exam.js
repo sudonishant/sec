@@ -62,106 +62,106 @@ let state = {
 let QUESTION_BANK = [
   {
     id: 1,
-    question: "What is the primary objective of a Technical Club?",
-    options: ["Sports", "Practical technical learning", "Entertainment", "Politics"],
+    question: "Engineers' Day in India is celebrated on 15th September to honour which legendary engineer?",
+    options: ["A.P.J. Abdul Kalam", "M. Visvesvaraya", "Homi J. Bhabha", "C.V. Raman"],
     correct: 1,
     points: 1
   },
   {
     id: 2,
-    question: "Which platform is mainly used for version control?",
-    options: ["GitHub", "Canva", "VS Code", "Chrome"],
-    correct: 0,
+    question: "Which Indian space mission made history by successfully landing near the Moon's South Pole in 2023?",
+    options: ["Mangalyaan", "Chandrayaan-2", "Chandrayaan-3", "Aditya-L1"],
+    correct: 2,
     points: 1
   },
   {
     id: 3,
-    question: "IoT stands for",
-    options: ["Internet of Things", "Intelligence of Tech", "Integration of Tools", "None"],
-    correct: 0,
+    question: "Who is widely recognized as the 'Father of Modern Computer Science and Artificial Intelligence'?",
+    options: ["Charles Babbage", "Alan Turing", "John von Neumann", "Ada Lovelace"],
+    correct: 1,
     points: 1
   },
   {
     id: 4,
-    question: "Which language is popular for AI?",
-    options: ["Python", "HTML", "CSS", "SQL"],
+    question: "What does the abbreviation 'LED' stand for in electronics?",
+    options: ["Light Emitting Diode", "Low Energy Display", "Light Energy Device", "Liquid Emitting Diode"],
     correct: 0,
     points: 1
   },
   {
     id: 5,
-    question: "A hackathon focuses on",
-    options: ["Singing", "Problem-solving", "Cricket", "Debate"],
+    question: "In robotics and mechatronics, what device converts electrical energy directly into mechanical motion?",
+    options: ["Sensor", "Actuator", "Rectifier", "Capacitor"],
     correct: 1,
     points: 1
   },
   {
     id: 6,
-    question: "Which protocol is secure?",
-    options: ["HTTP", "HTTPS", "FTP", "SMTP"],
-    correct: 1,
+    question: "What does 'WiFi' technically stand for?",
+    options: ["Wireless Filing", "Wide Frequency Internet", "Wireless Fidelity", "Wire-Free Internet"],
+    correct: 2,
     points: 1
   },
   {
     id: 7,
-    question: "Git command to upload commits?",
-    options: ["git pull", "git push", "git clone", "git init"],
+    question: "In computer architecture, exactly how many bits constitute one single Byte?",
+    options: ["4 bits", "8 bits", "16 bits", "32 bits"],
     correct: 1,
     points: 1
   },
   {
     id: 8,
-    question: "Which is NOT an operating system?",
-    options: ["Linux", "Windows", "Oracle", "macOS"],
+    question: "Which revolutionary neural network architecture introduced by Google in 2017 powers modern Large Language Models (LLMs)?",
+    options: ["Recurrent Neural Network (RNN)", "Convolutional Neural Network (CNN)", "Transformer", "Support Vector Machine (SVM)"],
     correct: 2,
     points: 1
   },
   {
     id: 9,
-    question: "Which sensor measures distance?",
-    options: ["MQ2", "DHT11", "Ultrasonic", "LDR"],
-    correct: 2,
+    question: "What does 'UPS' stand for in power systems and computing?",
+    options: ["Universal Power Supply", "Uninterruptible Power Supply", "Unified Protection System", "Unlimited Power Source"],
+    correct: 1,
     points: 1
   },
   {
     id: 10,
-    question: "AI that creates text/images is called",
-    options: ["Predictive AI", "Generative AI", "Embedded AI", "Rule AI"],
+    question: "Which carbon allotrope, consisting of a single layer of atoms, is called the 'wonder material' for its extreme strength and conductivity?",
+    options: ["Carbon Fibre", "Graphene", "Diamond", "Fullerene"],
     correct: 1,
     points: 1
   },
   {
     id: 11,
-    question: "If registrations exceed seats, best approach?",
-    options: ["First come", "Random", "Transparent selection", "Cancel"],
+    question: "Which mathematical number system using only digits 0 and 1 forms the foundational logic for all digital electronic computers?",
+    options: ["Octal", "Hexadecimal", "Binary", "Decimal"],
     correct: 2,
     points: 1
   },
   {
     id: 12,
-    question: "GitHub is mainly used for",
-    options: ["Photo editing", "Code collaboration", "Video calls", "Email"],
+    question: "In cybersecurity, which security mechanism requires two different authentication factors before granting account access?",
+    options: ["Single Sign-On (SSO)", "Two-Factor Authentication (2FA)", "Captcha Verification", "End-to-End Encryption"],
     correct: 1,
     points: 1
   },
   {
     id: 13,
-    question: "CPU stands for",
-    options: ["Central Processing Unit", "Central Program Utility", "Control Process Unit", "None"],
-    correct: 0,
+    question: "Which rechargeable battery technology is the primary power source for modern Electric Vehicles (EVs) and smartphones?",
+    options: ["Lead-Acid Battery", "Nickel-Cadmium Battery", "Lithium-Ion Battery", "Zinc-Carbon Battery"],
+    correct: 2,
     points: 1
   },
   {
     id: 14,
-    question: "Most important team skill",
-    options: ["Listening", "Interrupting", "Ignoring", "Arguing"],
+    question: "In cloud computing, which model provides virtualized computing resources (servers, storage, networking) over the internet on-demand?",
+    options: ["Infrastructure as a Service (IaaS)", "Platform as a Service (PaaS)", "Software as a Service (SaaS)", "Function as a Service (FaaS)"],
     correct: 0,
     points: 1
   },
   {
     id: 15,
-    question: "Best event for innovation",
-    options: ["Startup Pitch", "Fashion Show", "Dance", "Cricket"],
+    question: "In quantum computing, what is the basic unit of quantum information that can exist in superposition as both 0 and 1 simultaneously?",
+    options: ["Qubit", "Quantum Byte", "Posit", "Superbit"],
     correct: 0,
     points: 1
   }
@@ -1024,6 +1024,74 @@ async function detectRealFace(canvas, video) {
 let proctorOffscreenCanvas = null;
 let proctorOffscreenCtx = null;
 let proctorTimeoutId = null;
+let prevMotionLuma = null;
+let lastGestureWaveTime = 0;
+let waveTrackingPoints = [];
+
+function detectCameraHandWave(ctx, width, height) {
+  if (!state.examStarted || state.examSubmitted || state.isPhoneLockActive) return;
+  const now = Date.now();
+  if (now - lastGestureWaveTime < 1800) return; // 1.8s cooldown
+
+  try {
+    const frameData = ctx.getImageData(0, 0, width, height).data;
+    const currentLuma = new Uint8Array(width * height);
+    for (let i = 0; i < frameData.length; i += 4) {
+      currentLuma[i / 4] = (frameData[i] * 299 + frameData[i + 1] * 587 + frameData[i + 2] * 114) / 1000;
+    }
+
+    if (!prevMotionLuma || prevMotionLuma.length !== currentLuma.length) {
+      prevMotionLuma = currentLuma;
+      return;
+    }
+
+    let motionCount = 0;
+    let sumX = 0;
+    const len = currentLuma.length;
+    for (let i = 0; i < len; i += 4) { // sample every 4th pixel for high performance
+      if (Math.abs(currentLuma[i] - prevMotionLuma[i]) > 35) {
+        motionCount++;
+        sumX += (i % width);
+      }
+    }
+    prevMotionLuma = currentLuma;
+
+    const motionRatio = motionCount / (len / 4);
+    // Detect hand wave: significant localized motion in camera
+    if (motionRatio > 0.08 && motionRatio < 0.45) {
+      const centroidX = sumX / motionCount;
+      waveTrackingPoints.push({ x: centroidX, time: now });
+      if (waveTrackingPoints.length > 5) waveTrackingPoints.shift();
+
+      if (waveTrackingPoints.length >= 3) {
+        const first = waveTrackingPoints[0];
+        const last = waveTrackingPoints[waveTrackingPoints.length - 1];
+        const dt = last.time - first.time;
+        const dx = last.x - first.x;
+
+        if (dt > 120 && dt < 1200 && Math.abs(dx) > width * 0.25) {
+          lastGestureWaveTime = now;
+          waveTrackingPoints = [];
+          if (dx > 0) {
+            // Motion moving left-to-right (User waving towards next)
+            if (navigator.vibrate) try { navigator.vibrate(30); } catch (_) {}
+            showToast("👋 Next Question (Camera Hand Wave)");
+            saveAndNext();
+          } else {
+            // Motion moving right-to-left
+            if (state.currentQuestionIndex > 0) {
+              if (navigator.vibrate) try { navigator.vibrate(30); } catch (_) {}
+              showToast("👋 Previous Question (Camera Hand Wave)");
+              navigateQuestion(-1);
+            }
+          }
+        }
+      }
+    } else if (now - (waveTrackingPoints[waveTrackingPoints.length - 1]?.time || 0) > 800) {
+      waveTrackingPoints = [];
+    }
+  } catch (err) {}
+}
 
 function startAIProctorLoop() {
   if (proctorInterval) {
@@ -1100,6 +1168,8 @@ async function checkFrameForPhoneViolation(video) {
   }
 
   proctorOffscreenCtx.drawImage(video, 0, 0, 240, 180);
+  detectCameraHandWave(proctorOffscreenCtx, 240, 180);
+
   const scaleX = origWidth / 240;
   const scaleY = origHeight / 180;
 
@@ -1884,8 +1954,27 @@ function setupAntiCheatListeners() {
     });
   });
 
-  // Mobile Screenshot Gesture Protection (3-finger swipe, palm swipe, 2+ touches)
-  const blockMultiTouch = (e) => {
+  // Mobile Screenshot Gesture Protection & Hand Gesture Navigation
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+
+  const handleTouchStart = (e) => {
+    if (!state.examStarted || state.examSubmitted) return;
+    if (e.touches && e.touches.length >= 2) {
+      e.preventDefault();
+      e.stopPropagation();
+      triggerScreenshotProtection("Multi-touch Gesture / 3-Finger Screenshot Blocked");
+      return false;
+    }
+    if (e.touches && e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    }
+  };
+
+  const handleTouchMove = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
     if (e.touches && e.touches.length >= 2) {
       e.preventDefault();
@@ -1894,10 +1983,46 @@ function setupAntiCheatListeners() {
       return false;
     }
   };
-  window.addEventListener('touchstart', blockMultiTouch, { capture: true, passive: false });
-  window.addEventListener('touchmove', blockMultiTouch, { capture: true, passive: false });
-  document.addEventListener('touchstart', blockMultiTouch, { capture: true, passive: false });
-  document.addEventListener('touchmove', blockMultiTouch, { capture: true, passive: false });
+
+  const handleTouchEnd = (e) => {
+    if (!state.examStarted || state.examSubmitted) return;
+    if (!touchStartTime) return;
+
+    const timeDiff = Date.now() - touchStartTime;
+    if (timeDiff > 700) return; // Ignore very slow drags
+
+    const touchEndX = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientX : 0;
+    const touchEndY = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientY : 0;
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    // Must be predominantly horizontal swipe of at least 50px
+    if (Math.abs(deltaX) > 55 && Math.abs(deltaX) > 1.4 * Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        // Swipe Left -> Next Question
+        if (navigator.vibrate) try { navigator.vibrate(30); } catch (_) {}
+        showToast("👉 Next Question (Hand Gesture)");
+        saveAndNext();
+      } else {
+        // Swipe Right -> Previous Question
+        if (state.currentQuestionIndex > 0) {
+          if (navigator.vibrate) try { navigator.vibrate(30); } catch (_) {}
+          showToast("👈 Previous Question (Hand Gesture)");
+          navigateQuestion(-1);
+        }
+      }
+    }
+    touchStartX = 0;
+    touchStartY = 0;
+    touchStartTime = 0;
+  };
+
+  window.addEventListener('touchstart', handleTouchStart, { capture: true, passive: false });
+  window.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
+  window.addEventListener('touchend', handleTouchEnd, { capture: false, passive: true });
+  document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: false });
+  document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
+  document.addEventListener('touchend', handleTouchEnd, { capture: false, passive: true });
 
   // Continuous Clipboard Sanitizer during active exam
   setInterval(() => {

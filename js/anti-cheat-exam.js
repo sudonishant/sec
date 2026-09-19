@@ -1714,8 +1714,11 @@ function handleWindowBlur() {
   if (!state.examStarted || state.examSubmitted) return;
   // Grace period during initial exam load / fullscreen transition
   if (state.examStartTime && (Date.now() - state.examStartTime < 3000)) return;
-  // If the document still has focus, this is an internal DOM focus change, not window blur
-  if (document.hasFocus()) return;
+
+  // On desktop browsers, document.hasFocus() checks for internal focus changes.
+  // On mobile devices, taking a screenshot or pulling notification shade causes window blur while document.hasFocus() may stay true.
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (!isMobile && document.hasFocus()) return;
 
   // 1. Physically hide quiz from render tree
   const quizGrid = document.getElementById('quiz-main-section');
@@ -1727,8 +1730,8 @@ function handleWindowBlur() {
   document.body.classList.add('screen-blur-blackout');
   clearClipboard();
 
-  recordViolationEvidence("Window Lost Focus / Outside App Clicked");
-  registerTabSwitchViolation("Window Lost Focus / External Application Activated");
+  recordViolationEvidence("Window Lost Focus / Screenshot or App Switch");
+  registerTabSwitchViolation("Window Lost Focus / Screenshot or App Switch Attempt");
 }
 
 window.addEventListener('focus', () => {
@@ -1982,72 +1985,30 @@ function setupAntiCheatListeners() {
     });
   });
 
-  // Mobile Screenshot Gesture Protection & Hand Gesture Navigation
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchStartTime = 0;
-
+  // Mobile Screenshot Gesture Protection (Multi-touch / 3-finger screenshot blocker)
+  // Single-finger touch is reserved purely for tapping options and normal scrolling
   const handleTouchStart = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
-    if (e.touches && e.touches.length >= 3) {
+    if (e.touches && e.touches.length >= 2) {
       e.preventDefault();
       e.stopPropagation();
-      triggerScreenshotProtection("Multi-touch Gesture / 3-Finger Screenshot Blocked");
+      triggerScreenshotProtection("Multi-touch Gesture / Screenshot Attempt Detected");
       return false;
-    }
-    if (e.touches && e.touches.length === 1) {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      touchStartTime = Date.now();
     }
   };
 
   const handleTouchMove = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
-    if (e.touches && e.touches.length >= 3) {
+    if (e.touches && e.touches.length >= 2) {
       e.preventDefault();
       e.stopPropagation();
-      triggerScreenshotProtection("Multi-touch Gesture / 3-Finger Screenshot Blocked");
+      triggerScreenshotProtection("Multi-touch Gesture / Screenshot Attempt Detected");
       return false;
     }
   };
 
-  const handleTouchEnd = (e) => {
-    if (!state.examStarted || state.examSubmitted) return;
-    if (!touchStartTime) return;
-
-    const timeDiff = Date.now() - touchStartTime;
-    if (timeDiff > 700) return; // Ignore very slow drags
-
-    const touchEndX = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientX : 0;
-    const touchEndY = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientY : 0;
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    // Must be predominantly horizontal swipe of at least 50px
-    if (Math.abs(deltaX) > 55 && Math.abs(deltaX) > 1.4 * Math.abs(deltaY)) {
-      if (deltaX < 0) {
-        // Swipe Left -> Next Question
-        if (navigator.vibrate) try { navigator.vibrate(30); } catch (_) {}
-        showToast("👉 Next Question (Hand Gesture)");
-        saveAndNext();
-      } else {
-        // Swipe Right -> Previous Question
-        if (state.currentQuestionIndex > 0) {
-          if (navigator.vibrate) try { navigator.vibrate(30); } catch (_) {}
-          showToast("👈 Previous Question (Hand Gesture)");
-          navigateQuestion(-1);
-        }
-      }
-    }
-    touchStartX = 0;
-    touchStartY = 0;
-    touchStartTime = 0;
-  };
-
   document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: false });
   document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
-  document.addEventListener('touchend', handleTouchEnd, { capture: false, passive: true });
 
   // Continuous Clipboard Sanitizer during active exam
   setInterval(() => {

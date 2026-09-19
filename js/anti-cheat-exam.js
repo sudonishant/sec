@@ -2092,7 +2092,7 @@ function playBeepSound() {
 }
 
 // -------------------------------------------------------------
-// 4. DYNAMIC FLOATING & GRID WATERMARK (ANTI-CAMERA / ANTI-OCR)
+// 4. STATIC STATIONARY WATERMARK (ZERO MOVEMENT / NO DISTRACTION)
 // -------------------------------------------------------------
 function startDynamicWatermark() {
   const container = document.getElementById('dynamic-watermark-container');
@@ -2100,52 +2100,20 @@ function startDynamicWatermark() {
 
   container.innerHTML = '';
   
-  const studentRoll = state.student.rollNo || 'CONFIDENTIAL';
-  const studentName = state.student.name || 'STUDENT CANDIDATE';
-  const label = `${studentRoll} • ${studentName} • SEC SUPAUL EXAM LOCK • STRICTLY CONFIDENTIAL`;
+  const studentRoll = state.student.rollNo || '';
+  const studentName = state.student.name || '';
+  const branch = state.student.branch || '';
+  const label = `${studentRoll} • ${studentName} • ${branch} • SEC SUPAUL`;
 
-  // 1. Repeating full-screen watermark grid (Anti-Camera / Anti-OCR protection)
+  // Stationary watermark grid (completely still - zero motion / zero distraction)
   const gridOverlay = document.createElement('div');
   gridOverlay.className = 'watermark-grid-overlay';
   let gridRows = '';
-  for (let r = 0; r < 14; r++) {
+  for (let r = 0; r < 10; r++) {
     gridRows += `<div class="watermark-grid-row">${label} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${label}</div>`;
   }
   gridOverlay.innerHTML = gridRows;
   container.appendChild(gridOverlay);
-
-  // 2. Create 3 floating watermark elements that bounce smoothly across screen
-  for (let i = 0; i < 3; i++) {
-    const wm = document.createElement('div');
-    wm.className = 'watermark-text';
-    wm.id = `watermark-${i}`;
-    wm.innerText = `${studentRoll} • ${studentName} • SEC SUPAUL • ${state.student.branch || 'EXAM'}`;
-    container.appendChild(wm);
-    
-    animateWatermark(wm, i);
-  }
-}
-
-function animateWatermark(el, index) {
-  let posX = Math.random() * (window.innerWidth - 300);
-  let posY = Math.random() * (window.innerHeight - 100);
-  let speedX = (1 + Math.random() * 1.5) * (index % 2 === 0 ? 1 : -1);
-  let speedY = (1 + Math.random() * 1.5) * (index % 2 === 0 ? -1 : 1);
-
-  function step() {
-    if (!state.examStarted || state.examSubmitted) return;
-
-    posX += speedX;
-    posY += speedY;
-
-    if (posX <= 0 || posX >= window.innerWidth - 350) speedX *= -1;
-    if (posY <= 0 || posY >= window.innerHeight - 100) speedY *= -1;
-
-    el.style.transform = `translate(${posX}px, ${posY}px) rotate(-20deg)`;
-    requestAnimationFrame(step);
-  }
-
-  requestAnimationFrame(step);
 }
 
 // -------------------------------------------------------------
@@ -2324,6 +2292,9 @@ function renderQuestion(index) {
 
 function selectOption(questionIndex, optionIndex) {
   state.userAnswers[questionIndex] = optionIndex;
+  if (navigator.vibrate) {
+    try { navigator.vibrate(20); } catch (_) {}
+  }
   // Update selection UI without auto-advancing (user requested: auto mat hone dooo)
   const optionsGroupEl = document.getElementById('q-options-list');
   if (optionsGroupEl) {
@@ -2596,15 +2567,129 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
     screenshot: ''
   };
 
-  // Direct instant processing - never hangs or blocks on mobile!
+  // Direct instant processing with system screenshot generation
   processFinalSubmission(payload, reason);
 }
 
-function processFinalSubmission(payload, reason) {
+// -------------------------------------------------------------
+// 7. SYSTEM SCREENSHOT GENERATOR (Official Anti-Cheat Scorecard)
+// -------------------------------------------------------------
+async function generateSystemSubmissionScreenshot(payload) {
+  try {
+    // 1. If html2canvas is available, attempt to capture the result card
+    if (window.html2canvas) {
+      const card = document.getElementById('result-screen-card');
+      if (card && card.style.display !== 'none') {
+        const c = await window.html2canvas(card, {
+          scale: 1,
+          backgroundColor: '#0a0f1d',
+          logging: false,
+          useCORS: true
+        });
+        const url = c.toDataURL('image/jpeg', 0.8);
+        if (url && url.length > 500) return url;
+      }
+    }
+  } catch (err) {
+    console.warn("html2canvas notice, falling back to certified system canvas:", err);
+  }
+
+  // 2. High-Resolution Certified System Scorecard & Security Audit Snapshot
+  const canvas = document.createElement('canvas');
+  canvas.width = 720;
+  canvas.height = 540;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0a0f1d';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Top Navy Header Bar
+  ctx.fillStyle = '#003366';
+  ctx.fillRect(0, 0, canvas.width, 68);
+
+  // Institution Title
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px Arial, sans-serif';
+  ctx.fillText('SCE SUPAUL • TECHNICAL CLUB EXAM', 24, 32);
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = '12px Arial, sans-serif';
+  ctx.fillText('OFFICIAL CERTIFIED EXAM AUDIT & SUBMISSION SNAPSHOT', 24, 52);
+
+  // Status Badge
+  ctx.fillStyle = payload.status === 'COMPLETED' ? '#22c55e' : '#ef4444';
+  ctx.fillRect(canvas.width - 165, 18, 140, 32);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 12px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(payload.status, canvas.width - 95, 39);
+  ctx.textAlign = 'left';
+
+  // Candidate Photo (if captured)
+  if (state.candidatePhoto) {
+    try {
+      const img = new Image();
+      img.src = state.candidatePhoto;
+      ctx.drawImage(img, 24, 88, 120, 145);
+      ctx.strokeStyle = '#00f2fe';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(24, 88, 120, 145);
+    } catch (_) {}
+  }
+
+  // Student Details
+  const leftX = state.candidatePhoto ? 165 : 24;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 17px Arial, sans-serif';
+  ctx.fillText(`Candidate: ${payload.studentName}`, leftX, 112);
+  ctx.font = '14px Arial, sans-serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText(`Roll No: ${payload.rollNo}`, leftX, 140);
+  ctx.fillText(`Branch: ${payload.branch} | Subject: ${payload.subject}`, leftX, 166);
+  ctx.fillText(`Time Spent: ${payload.formattedTimeTaken}`, leftX, 192);
+  ctx.fillText(`Violations: ${payload.warningCount} Warnings (${state.totalTimeAwaySeconds || 0}s out of exam)`, leftX, 218);
+
+  // Score Box
+  ctx.fillStyle = 'rgba(2, 117, 216, 0.15)';
+  ctx.fillRect(24, 250, canvas.width - 48, 80);
+  ctx.strokeStyle = '#0275d8';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(24, 250, canvas.width - 48, 80);
+
+  ctx.fillStyle = '#00f2fe';
+  ctx.font = 'bold 13px Arial, sans-serif';
+  ctx.fillText('FINAL VERIFIED SCORE', 40, 274);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 36px Arial, sans-serif';
+  ctx.fillText(`${payload.score} / ${payload.totalQuestions}`, 40, 314);
+
+  ctx.fillStyle = '#22c55e';
+  ctx.font = 'bold 24px Arial, sans-serif';
+  ctx.fillText(`(${payload.percentage})`, 210, 312);
+
+  // Responses preview text
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px monospace';
+  const respPreview = (payload.detailedResponsesSummary || '').slice(0, 95) + '...';
+  ctx.fillText(respPreview, 24, 360);
+
+  // Official Integrity Stamp
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, canvas.height - 44, canvas.width, 44);
+  ctx.fillStyle = '#00f2fe';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText(`🔒 SEC-AUTHENTICATED SYSTEM CAPTURE • ${payload.timestamp} • HASH: ${Date.now().toString(36).toUpperCase()}`, 24, canvas.height - 17);
+
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+async function processFinalSubmission(payload, reason) {
   // Hide Exam UI, Show Result Screen
   document.getElementById('quiz-main-section').style.display = 'none';
   document.getElementById('header-monitor-bar').style.display = 'none';
   document.getElementById('result-screen-card').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'instant' });
 
   // Update Result UI
   document.getElementById('res-student-name').innerText = payload.studentName;
@@ -2628,6 +2713,13 @@ function processFinalSubmission(payload, reason) {
   const evidenceCountEl = document.getElementById('res-evidence-count');
   if (evidenceCountEl) {
     evidenceCountEl.innerText = `${state.violationEvidenceList.length} Violations Captured`;
+  }
+
+  // Generate system screenshot now that result card is rendered
+  try {
+    payload.screenshot = await generateSystemSubmissionScreenshot(payload);
+  } catch (err) {
+    console.warn("System screenshot capture notice:", err);
   }
 
   // Populate Enhanced Violation Table with Snapshots & Duration

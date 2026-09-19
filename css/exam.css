@@ -232,34 +232,28 @@ body {
 }
 
 /* Anti-Screenshot Screen Blur Blackout Overlay */
-body.screen-blur-blackout {
+/* Solid Instant Blackout Shield (Zero-lag, 100% coverage, inspired by Screenshot-PrivacyProtectionWeb) */
+#screenshot-blackout-shield {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   background: #000000 !important;
-}
-
-body.screen-blur-blackout * {
-  filter: blur(120px) brightness(0) !important;
-  -webkit-filter: blur(120px) brightness(0) !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-body.screen-blur-blackout #screenshot-blackout-shield {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  pointer-events: all !important;
   z-index: 2147483647 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: column !important;
+  color: #ff0055 !important;
+  text-align: center !important;
+  padding: 2rem !important;
+  pointer-events: all !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
-body.screen-blur-blackout #screenshot-blackout-shield * {
-  visibility: visible !important;
-  opacity: 1 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  pointer-events: all !important;
+#screenshot-blackout-shield.active {
+  display: flex !important;
 }
 
 /* Anti-Print Blocker */

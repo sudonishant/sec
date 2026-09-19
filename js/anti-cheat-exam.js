@@ -1696,10 +1696,12 @@ function handleVisibilityChange() {
     const quizGrid = document.getElementById('quiz-main-section');
     if (quizGrid) quizGrid.style.display = 'none';
 
-    // 2. Show dedicated pitch-black shield
+    // 2. Show dedicated pitch-black shield (instant 0ms hardware blackout)
     const shield = document.getElementById('screenshot-blackout-shield');
-    if (shield) shield.style.display = 'flex';
-    document.body.classList.add('screen-blur-blackout');
+    if (shield) {
+      shield.classList.add('active');
+      shield.style.display = 'flex';
+    }
     clearClipboard();
 
     recordViolationEvidence("Tab Switch / App in Background");
@@ -1724,10 +1726,12 @@ function handleWindowBlur() {
   const quizGrid = document.getElementById('quiz-main-section');
   if (quizGrid) quizGrid.style.display = 'none';
 
-  // 2. Show dedicated pitch-black shield
+  // 2. Show dedicated pitch-black shield (instant 0ms hardware blackout)
   const shield = document.getElementById('screenshot-blackout-shield');
-  if (shield) shield.style.display = 'flex';
-  document.body.classList.add('screen-blur-blackout');
+  if (shield) {
+    shield.classList.add('active');
+    shield.style.display = 'flex';
+  }
   clearClipboard();
 
   recordViolationEvidence("Window Lost Focus / Screenshot or App Switch");
@@ -1787,14 +1791,16 @@ function triggerScreenshotProtection(reason) {
   // Grace period during initial exam load / fullscreen transition
   if (state.examStartTime && (Date.now() - state.examStartTime < 3000)) return;
 
-  // 1. Physically hide the quiz container from render tree
+  // 1. Physically hide the quiz container immediately
   const quizGrid = document.getElementById('quiz-main-section');
   if (quizGrid) quizGrid.style.display = 'none';
 
-  // 2. Show dedicated high-priority pitch-black shield
+  // 2. Activate dedicated pitch-black hardware shield instantly (0ms latency, zero GPU blur)
   const shield = document.getElementById('screenshot-blackout-shield');
-  if (shield) shield.style.display = 'flex';
-  document.body.classList.add('screen-blur-blackout');
+  if (shield) {
+    shield.classList.add('active');
+    shield.style.display = 'flex';
+  }
 
   // 3. Purge clipboard contents immediately
   clearClipboard();
@@ -1809,8 +1815,11 @@ function triggerScreenshotProtection(reason) {
   registerTabSwitchViolation(`Screenshot Attempt Detected (${reason})`);
   showToast(`🚫 SCREENSHOT BLOCKED! Screenshot lena sakht mana hai.`);
 
-  // Auto-restore after 2.5 seconds if user is in window
-  setTimeout(() => {
+  // Auto-restore after 2.5 seconds if user is in window and focused
+  if (window._screenshotAutoRestoreTimer) {
+    clearTimeout(window._screenshotAutoRestoreTimer);
+  }
+  window._screenshotAutoRestoreTimer = setTimeout(() => {
     if (!document.hidden && document.hasFocus() && !state.isPhoneLockActive) {
       dismissScreenshotShield();
     }
@@ -1818,9 +1827,18 @@ function triggerScreenshotProtection(reason) {
 }
 
 function dismissScreenshotShield() {
+  if (window._screenshotAutoRestoreTimer) {
+    clearTimeout(window._screenshotAutoRestoreTimer);
+    window._screenshotAutoRestoreTimer = null;
+  }
   const shield = document.getElementById('screenshot-blackout-shield');
-  if (shield) shield.style.display = 'none';
+  if (shield) {
+    shield.classList.remove('active');
+    shield.style.display = 'none';
+  }
   document.body.classList.remove('screen-blur-blackout');
+  
+  // Re-display exam UI cleanly
   if (state.examStarted && !state.examSubmitted && !state.isPhoneLockActive) {
     const quizGrid = document.getElementById('quiz-main-section');
     if (quizGrid) quizGrid.style.display = 'grid';
@@ -1879,12 +1897,17 @@ function setupAntiCheatListeners() {
     }
 
     // 3. Windows Snipping Tool (Win + Shift + S or Ctrl + Shift + S)
-    if ((ctrl || e.metaKey) && shift && (key === 's' || key === 'S' || e.code === 'KeyS')) {
+    const isWinShiftS = (
+      ((ctrl || e.metaKey) && shift && (key === 's' || key === 'S' || e.code === 'KeyS')) ||
+      (e.getModifierState && e.getModifierState('Meta') && e.getModifierState('Shift') && (key === 's' || key === 'S')) ||
+      (keyCode === 83 && (ctrl || e.metaKey) && shift)
+    );
+    if (isWinShiftS) {
       return 'Snipping Tool Shortcut (Win/Ctrl+Shift+S)';
     }
 
-    // 4. macOS Screenshot Shortcuts (Cmd + Shift + 3 / 4 / 5)
-    if (e.metaKey && shift && (key === '3' || key === '4' || key === '5' || e.code === 'Digit3' || e.code === 'Digit4' || e.code === 'Digit5')) {
+    // 4. macOS Screenshot Shortcuts (Cmd + Shift + 3 / 4 / 5 / 6)
+    if (e.metaKey && shift && (key === '3' || key === '4' || key === '5' || key === '6' || e.code === 'Digit3' || e.code === 'Digit4' || e.code === 'Digit5' || e.code === 'Digit6')) {
       return 'macOS Screenshot Shortcut (Cmd+Shift+3/4/5)';
     }
 
@@ -1896,13 +1919,21 @@ function setupAntiCheatListeners() {
     return null;
   };
 
+  const cancelAggressive = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    if (e.returnValue !== undefined) e.returnValue = false;
+    if (e.cancel !== undefined) e.cancel = true;
+    if (e.cancelBubble !== undefined) e.cancelBubble = true;
+  };
+
   const handleKeyDown = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
 
     const screenshotReason = isScreenshotKey(e);
     if (screenshotReason) {
-      e.preventDefault();
-      e.stopPropagation();
+      cancelAggressive(e);
       triggerScreenshotProtection(screenshotReason);
       return false;
     }
@@ -1913,8 +1944,7 @@ function setupAntiCheatListeners() {
 
     // Block F12 (DevTools)
     if (key === 'F12' || e.keyCode === 123) {
-      e.preventDefault();
-      e.stopPropagation();
+      cancelAggressive(e);
       showToast("🚫 Developer Tools (F12) Disabled!");
       logViolation("Attempted Developer Tools (F12)");
       return false;
@@ -1922,8 +1952,7 @@ function setupAntiCheatListeners() {
 
     // Block Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+U (View Source), Ctrl+S (Save), Ctrl+A (Select All)
     if (ctrl && (key === 'c' || key === 'C' || key === 'v' || key === 'V' || key === 'u' || key === 'U' || key === 's' || key === 'S' || key === 'a' || key === 'A')) {
-      e.preventDefault();
-      e.stopPropagation();
+      cancelAggressive(e);
       showToast(`❌ Shortcut Ctrl+${key.toUpperCase()} Disabled!`);
       logViolation(`Attempted Shortcut Ctrl+${key.toUpperCase()}`);
       return false;
@@ -1931,29 +1960,58 @@ function setupAntiCheatListeners() {
 
     // Block DevTools Shortcuts: Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
     if (ctrl && shift && (key === 'I' || key === 'i' || key === 'J' || key === 'j' || key === 'C' || key === 'c')) {
-      e.preventDefault();
-      e.stopPropagation();
+      cancelAggressive(e);
       showToast("🚫 Inspect Element Disabled!");
       logViolation("Attempted Inspect Element Shortcut");
       return false;
     }
   };
 
-  document.addEventListener('keydown', handleKeyDown, { capture: true });
-  window.addEventListener('keydown', handleKeyDown, { capture: true });
+  // Attach keydown & keyup to document and window in both capture and bubble phases
+  document.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
+  document.addEventListener('keydown', handleKeyDown, { capture: false, passive: false });
+  window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
+  window.addEventListener('keydown', handleKeyDown, { capture: false, passive: false });
 
   // Secondary key release listener for OS hardware keys (Volume/Power/PrtScn)
   const handleKeyUp = (e) => {
     if (!state.examStarted || state.examSubmitted) return;
     const screenshotReason = isScreenshotKey(e);
     if (screenshotReason) {
-      e.preventDefault();
-      e.stopPropagation();
+      cancelAggressive(e);
       triggerScreenshotProtection(`${screenshotReason} Released`);
+      return false;
     }
   };
-  document.addEventListener('keyup', handleKeyUp, { capture: true });
-  window.addEventListener('keyup', handleKeyUp, { capture: true });
+  document.addEventListener('keyup', handleKeyUp, { capture: true, passive: false });
+  window.addEventListener('keyup', handleKeyUp, { capture: true, passive: false });
+
+  // Anti-print event listener (dxvzz pattern)
+  window.addEventListener('beforeprint', (e) => {
+    if (state.examStarted && !state.examSubmitted) {
+      cancelAggressive(e);
+      triggerScreenshotProtection("Print / PDF Export Attempt");
+    }
+  });
+
+  // High-frequency focus loss monitor (dxvzz pattern: Snipping Tool / OS grab detection)
+  let lastFocusCheckTime = Date.now();
+  setInterval(() => {
+    if (!state.examStarted || state.examSubmitted) return;
+    if (state.examStartTime && (Date.now() - state.examStartTime < 3000)) return;
+    
+    const now = Date.now();
+    const elapsed = now - lastFocusCheckTime;
+    lastFocusCheckTime = now;
+
+    // Detect rapid focus drops (< 60ms) typical of OS screenshot hooks
+    if (!document.hasFocus() && elapsed < 60) {
+      const shield = document.getElementById('screenshot-blackout-shield');
+      if (shield && !shield.classList.contains('active')) {
+        triggerScreenshotProtection("Rapid Focus Drop / Screen Capture Attempt");
+      }
+    }
+  }, 25);
 
   // Additional focus/visibility listeners for mobile notification shade / page hide
   window.addEventListener('pagehide', handleWindowBlur);

@@ -17,7 +17,7 @@
 const CONFIG = {
   // Google Apps Script Web App Endpoint URL
   googleSheetWebAppUrl: 'https://script.google.com/macros/s/AKfycbzFyXEh_Tu49_ByjGx58jn5MMqmsbImXiSq_qmIqXNL5dxhbnRRVSShYBr8iIrcOJG2/exec',
-  maxWarnings: 5,
+  maxWarnings: 2,
   examDurationMinutes: 15,
 
   // ── Quiz Scheduled Start Time ──────────────────────────────
@@ -56,111 +56,146 @@ let state = {
   activeEvidenceItem: null
 };
 
-// Official Question Bank for Supaul College of Engineering - Technical Club (/15)
+// Check if a question is answered (handles both MCQ option numbers and Subjective text)
+function isQuestionAnswered(idx) {
+  const ans = state.userAnswers[idx];
+  if (ans === undefined || ans === null) return false;
+  if (typeof ans === 'string') return ans.trim().length > 0;
+  return true;
+}
+
+// Official Question Bank - Cyber Squad • SIH 2026 (/12)
 let QUESTION_BANK = [
   {
     id: 1,
-    question: "Engineers' Day in India is celebrated on 15th September to honour which legendary engineer?",
-    options: ["A.P.J. Abdul Kalam", "M. Visvesvaraya", "Homi J. Bhabha", "C.V. Raman"],
+    type: "mcq",
+    question: "Cyber Squad ke anusar suspicious email investigation fragmented aur slow kyu ho jati hai?",
+    options: [
+      "Kyunki internet speed hamesha low hoti hai",
+      "Kyunki analyst ko multiple signals ko alag-alag tools mein check karna padta hai",
+      "Kyunki koi bhi analyst email open nahi kar sakta",
+      "Kyunki emails mein koi technical data nahi hota"
+    ],
     correct: 1,
     points: 1
   },
   {
     id: 2,
-    question: "Which Indian space mission made history by successfully landing near the Moon's South Pole in 2023?",
-    options: ["Mangalyaan", "Chandrayaan-2", "Chandrayaan-3", "Aditya-L1"],
+    type: "mcq",
+    question: "Cyber Squad platform ka primary focus kya hai?",
+    options: [
+      "Sirf ek simple 'safe ya unsafe' label de dena",
+      "Human analyst ko fully replace kar dena",
+      "Evidence aur context combine karke explainable risk information dena",
+      "System ke saare emails ko automatically delete kar dena"
+    ],
     correct: 2,
     points: 1
   },
   {
     id: 3,
-    question: "Who is widely recognized as the 'Father of Modern Computer Science and Artificial Intelligence'?",
-    options: ["Charles Babbage", "Alan Turing", "John von Neumann", "Ada Lovelace"],
+    type: "mcq",
+    question: "EML analysis module mein sender-domain trust verify karne ke liye kaun se technical checks inspect kiye jaate hain?",
+    options: [
+      "HTML, CSS aur JavaScript",
+      "SPF, DKIM aur DMARC",
+      "TCP, UDP aur ICMP",
+      "PNG, JPEG aur GIF"
+    ],
     correct: 1,
     points: 1
   },
   {
     id: 4,
-    question: "What does the abbreviation 'LED' stand for in electronics?",
-    options: ["Light Emitting Diode", "Low Energy Display", "Light Energy Device", "Liquid Emitting Diode"],
-    correct: 0,
-    points: 1
-  },
-  {
-    id: 5,
-    question: "In robotics and mechatronics, what device converts electrical energy directly into mechanical motion?",
-    options: ["Sensor", "Actuator", "Rectifier", "Capacitor"],
+    type: "mcq",
+    question: "Text Analysis module mein agar koi single word jaise 'urgent' milta hai, toh Cyber Squad ka kya approach hota hai?",
+    options: [
+      "Woh word akele automatically fraud prove kar deta hai",
+      "Model pooray context ko dekh kar explainable risk indicators present karta hai",
+      "System uss message ko turant delete kar deta hai",
+      "AI output ko bina kisi human review ke final proof maan liya jata hai"
+    ],
     correct: 1,
     points: 1
   },
   {
+    id: 5,
+    type: "mcq",
+    question: "Attachment Analysis module mein file ka 'Hash' kyu especially important mana gaya hai?",
+    options: [
+      "Kyunki yeh file ka digital fingerprint deta hai jisse future investigation mein consistency check hoti hai",
+      "Kyunki yeh file ke visual design ko sundar banata hai",
+      "Kyunki yeh file ki size ko zero kar deta hai",
+      "Kyunki hash file ko password se encrypt kar deta hai"
+    ],
+    correct: 0,
+    points: 1
+  },
+  {
     id: 6,
-    question: "What does 'WiFi' technically stand for?",
-    options: ["Wireless Filing", "Wide Frequency Internet", "Wireless Fidelity", "Wire-Free Internet"],
-    correct: 2,
+    type: "mcq",
+    question: "Safe URL Detonator module ka main security principle kya bataya gaya hai?",
+    options: [
+      "URL analysis ka result absolute 100% guarantee hota hai",
+      "URL analysis ek security signal hai, absolute guarantee nahi; suspicious milne par additional verification zaroori hai",
+      "Live malicious URL ko direct browser mein open karke check karna chahiye",
+      "Sabhi external URLs automatically safe hote hain"
+    ],
+    correct: 1,
     points: 1
   },
   {
     id: 7,
-    question: "In computer architecture, exactly how many bits constitute one single Byte?",
-    options: ["4 bits", "8 bits", "16 bits", "32 bits"],
+    type: "mcq",
+    question: "Cyber Squad ke 4 core analysis modules ka sahi sequence kaun sa hai?",
+    options: [
+      "Antivirus, Firewall, VPN, Proxy",
+      "EML Analysis, Text Analysis, Attachment Analysis, Safe URL Detonator",
+      "Login, Signup, Forgot Password, Reset",
+      "Audio Analysis, Video Analysis, Image Analysis, Network Analysis"
+    ],
     correct: 1,
     points: 1
   },
   {
     id: 8,
-    question: "Which revolutionary neural network architecture introduced by Google in 2017 powers modern Large Language Models (LLMs)?",
-    options: ["Recurrent Neural Network (RNN)", "Convolutional Neural Network (CNN)", "Transformer", "Support Vector Machine (SVM)"],
-    correct: 2,
+    type: "mcq",
+    question: "Presentation rules ke anusar video demonstration mein malicious files aur customer data ke baare mein kya guideline di gayi hai?",
+    options: [
+      "Real customer email aur actual live malicious file use karo",
+      "Kewal synthetic demo data use karo; actual malicious file aur real personal data kabhi use na karo",
+      "Koi bhi synthetic data use karna mana hai",
+      "Live credential data screen par clearly show karo"
+    ],
+    correct: 1,
     points: 1
   },
   {
     id: 9,
-    question: "What does 'UPS' stand for in power systems and computing?",
-    options: ["Universal Power Supply", "Uninterruptible Power Supply", "Unified Protection System", "Unlimited Power Source"],
-    correct: 1,
+    type: "subjective",
+    question: "Cyber Squad platform ka main problem statement kya hai aur yeh traditional fragmented tools ke mukable analyst ki investigation ko kaise behtar banata hai? (Apne shabdon mein likhiye)",
+    "keywords": ["fragmented", "signals", "tools", "unified", "evidence", "explainable", "context", "faster", "informed"],
     points: 1
   },
   {
     id: 10,
-    question: "Which carbon allotrope, consisting of a single layer of atoms, is called the 'wonder material' for its extreme strength and conductivity?",
-    options: ["Carbon Fibre", "Graphene", "Diamond", "Fullerene"],
-    correct: 1,
+    type: "subjective",
+    question: "EML Analysis module email file ko parse karke kaun-kaun se important technical components separate karta hai aur SPF/DKIM/DMARC ka kya role hai? (Vistrit roop mein likhiye)",
+    "keywords": ["sender", "receiver", "subject", "body", "headers", "links", "attachments", "spf", "dkim", "dmarc", "trust", "domain", "authentication"],
     points: 1
   },
   {
     id: 11,
-    question: "Which mathematical number system using only digits 0 and 1 forms the foundational logic for all digital electronic computers?",
-    options: ["Octal", "Hexadecimal", "Binary", "Decimal"],
-    correct: 2,
+    type: "subjective",
+    question: "Attachment Analysis mein file-level evidence (jaise metadata aur digital fingerprint hash) inspect karna kyu zaroori hai? (Apna uttar likhiye)",
+    "keywords": ["attachment", "hash", "digital fingerprint", "metadata", "file type", "risk", "consistency", "investigation"],
     points: 1
   },
   {
     id: 12,
-    question: "In cybersecurity, which security mechanism requires two different authentication factors before granting account access?",
-    options: ["Single Sign-On (SSO)", "Two-Factor Authentication (2FA)", "Captcha Verification", "End-to-End Encryption"],
-    correct: 1,
-    points: 1
-  },
-  {
-    id: 13,
-    question: "Which rechargeable battery technology is the primary power source for modern Electric Vehicles (EVs) and smartphones?",
-    options: ["Lead-Acid Battery", "Nickel-Cadmium Battery", "Lithium-Ion Battery", "Zinc-Carbon Battery"],
-    correct: 2,
-    points: 1
-  },
-  {
-    id: 14,
-    question: "In cloud computing, which model provides virtualized computing resources (servers, storage, networking) over the internet on-demand?",
-    options: ["Infrastructure as a Service (IaaS)", "Platform as a Service (PaaS)", "Software as a Service (SaaS)", "Function as a Service (FaaS)"],
-    correct: 0,
-    points: 1
-  },
-  {
-    id: 15,
-    question: "In quantum computing, what is the basic unit of quantum information that can exist in superposition as both 0 and 1 simultaneously?",
-    options: ["Qubit", "Quantum Byte", "Posit", "Superbit"],
-    correct: 0,
+    type: "subjective",
+    question: "Safe URL Detonator module phishing links ko kaise analyze karta hai aur iska result ek 'security signal' kyu hai na ki 'absolute guarantee'? (Samjha kar likhiye)",
+    "keywords": ["url", "phishing", "fake login", "credential theft", "signal", "guarantee", "verification", "context", "controlled"],
     points: 1
   }
 ];
@@ -1942,12 +1977,20 @@ function setupAntiCheatListeners() {
     const ctrl = e.ctrlKey || e.metaKey;
     const shift = e.shiftKey;
 
+    // Allow normal typing & navigation inside input / textarea
+    const isTypingField = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA');
+
     // Block F12 (DevTools)
     if (key === 'F12' || e.keyCode === 123) {
       cancelAggressive(e);
       showToast("🚫 Developer Tools (F12) Disabled!");
       logViolation("Attempted Developer Tools (F12)");
       return false;
+    }
+
+    // Allow Ctrl+A / Ctrl+Z inside text fields for candidate editing convenience, block all else
+    if (ctrl && isTypingField && (key === 'a' || key === 'A' || key === 'z' || key === 'Z')) {
+      return; // Allow select-all and undo in candidate's own answer box
     }
 
     // Block Ctrl+C (Copy), Ctrl+V (Paste), Ctrl+U (View Source), Ctrl+S (Save), Ctrl+A (Select All)
@@ -2038,6 +2081,9 @@ function setupAntiCheatListeners() {
   ['cut', 'paste', 'selectstart', 'dragstart'].forEach(eventType => {
     document.addEventListener(eventType, (e) => {
       if (state.examStarted && !state.examSubmitted) {
+        if (eventType === 'selectstart' && e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+          return;
+        }
         e.preventDefault();
       }
     });
@@ -2255,7 +2301,11 @@ function renderQuestion(index) {
   const questionTextEl = document.getElementById('q-text-body');
   const optionsGroupEl = document.getElementById('q-options-list');
 
-  if (questionNumEl) questionNumEl.innerText = `Question ${index + 1} of ${QUESTION_BANK.length}`;
+  const typeBadge = q.type === 'subjective'
+    ? `<span class="q-type-badge subjective" style="margin-left: 10px;">Subjective / Written</span>`
+    : `<span class="q-type-badge mcq" style="margin-left: 10px;">MCQ</span>`;
+
+  if (questionNumEl) questionNumEl.innerHTML = `Question ${index + 1} of ${QUESTION_BANK.length} ${typeBadge}`;
   if (questionTextEl) questionTextEl.innerText = q.question;
 
   // Update animated cyan progress bar
@@ -2265,21 +2315,56 @@ function renderQuestion(index) {
 
   if (optionsGroupEl) {
     optionsGroupEl.innerHTML = '';
-    const keys = ['A', 'B', 'C', 'D'];
+    if (q.type === 'subjective') {
+      const currentVal = (typeof state.userAnswers[index] === 'string') ? state.userAnswers[index] : '';
+      const charCount = currentVal.length;
+      const wordCount = currentVal.trim() ? currentVal.trim().split(/\s+/).length : 0;
 
-    q.options.forEach((optText, optIdx) => {
-      const card = document.createElement('div');
-      const isSelected = state.userAnswers[index] === optIdx;
-      card.className = `option-card ${isSelected ? 'selected' : ''}`;
-      card.innerHTML = `
-        <div class="option-key">${keys[optIdx]}</div>
-        <div class="option-label">${escapeHtml(optText)}</div>
+      const container = document.createElement('div');
+      container.className = 'subjective-container';
+      container.innerHTML = `
+        <textarea 
+          id="subjective-input-${index}" 
+          class="subjective-textarea" 
+          rows="6" 
+          placeholder="Apna vistrit uttar yahan type karein (Type your detailed answer here)..."
+        >${escapeHtml(currentVal)}</textarea>
+        <div class="subjective-meta">
+          <span>✍️ Apne shabdon mein uttar likhein</span>
+          <span id="char-word-counter">${wordCount} words | ${charCount} chars</span>
+        </div>
       `;
-      card.addEventListener('click', () => {
-        selectOption(index, optIdx);
+      optionsGroupEl.appendChild(container);
+
+      const textarea = container.querySelector('textarea');
+      textarea.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (val.trim().length > 0) {
+          state.userAnswers[index] = val;
+        } else {
+          delete state.userAnswers[index];
+        }
+        const wc = val.trim() ? val.trim().split(/\s+/).length : 0;
+        const counter = document.getElementById('char-word-counter');
+        if (counter) counter.innerText = `${wc} words | ${val.length} chars`;
+        renderQuestionPalette();
       });
-      optionsGroupEl.appendChild(card);
-    });
+    } else {
+      const keys = ['A', 'B', 'C', 'D'];
+      (q.options || []).forEach((optText, optIdx) => {
+        const card = document.createElement('div');
+        const isSelected = state.userAnswers[index] === optIdx;
+        card.className = `option-card ${isSelected ? 'selected' : ''}`;
+        card.innerHTML = `
+          <div class="option-key">${keys[optIdx]}</div>
+          <div class="option-label">${escapeHtml(optText)}</div>
+        `;
+        card.addEventListener('click', () => {
+          selectOption(index, optIdx);
+        });
+        optionsGroupEl.appendChild(card);
+      });
+    }
   }
 
   // Update Nav Buttons
@@ -2379,7 +2464,7 @@ function renderQuestionPalette() {
   let countNotVisited = 0;
 
   QUESTION_BANK.forEach((q, idx) => {
-    const isAns = state.userAnswers[idx] !== undefined;
+    const isAns = isQuestionAnswered(idx);
     const isMrk = !!state.markedForReview[idx];
     const isVis = !!state.visitedQuestions[idx];
 
@@ -2407,7 +2492,7 @@ function renderQuestionPalette() {
   paletteEl.innerHTML = '';
   QUESTION_BANK.forEach((q, idx) => {
     const btn = document.createElement('button');
-    const isAnswered = state.userAnswers[idx] !== undefined;
+    const isAnswered = isQuestionAnswered(idx);
     const isMarked = !!state.markedForReview[idx];
     const isVisited = !!state.visitedQuestions[idx];
     const isCurrent = state.currentQuestionIndex === idx;
@@ -2447,11 +2532,14 @@ function navigateQuestion(direction) {
 }
 
 function confirmAndSubmitExam() {
-  const answeredCount = Object.keys(state.userAnswers).length;
+  let answeredCount = 0;
+  QUESTION_BANK.forEach((q, idx) => {
+    if (isQuestionAnswered(idx)) answeredCount++;
+  });
   const total = QUESTION_BANK.length;
   
   if (answeredCount === 0) {
-    alert("⚠️ Aapne ek bhi sawaal ka uttar nahi diya hai (0 / 15 Answered).\n\nExam submit karne ke liye kam se kam 1 sawaal ka uttar dena anivarya hai!");
+    alert(`⚠️ Aapne ek bhi sawaal ka uttar nahi diya hai (0 / ${total} Answered).\n\nExam submit karne ke liye kam se kam 1 sawaal ka uttar dena anivarya hai!`);
     return;
   }
 
@@ -2495,11 +2583,25 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
     state.cameraStream = null;
   }
 
-  // Calculate Score
+  // Calculate Score (MCQs + Subjective)
   let score = 0;
   QUESTION_BANK.forEach((q, idx) => {
-    if (state.userAnswers[idx] === q.correct) {
-      score += q.points;
+    if (q.type === 'subjective') {
+      const userText = (state.userAnswers[idx] || '').trim();
+      if (userText.length > 0) {
+        let matched = 0;
+        if (q.keywords && Array.isArray(q.keywords)) {
+          const lower = userText.toLowerCase();
+          matched = q.keywords.filter(k => lower.includes(k.toLowerCase())).length;
+        }
+        if (userText.length >= 15 && (matched >= 1 || userText.length >= 40)) {
+          score += (q.points || 1);
+        }
+      }
+    } else {
+      if (state.userAnswers[idx] === q.correct) {
+        score += (q.points || 1);
+      }
     }
   });
 
@@ -2558,10 +2660,16 @@ function autoSubmitExam(reason = 'MANUAL_SUBMIT') {
 
   // Build human-readable response summary for Google Sheets & CSV
   const responsesArray = QUESTION_BANK.map((q, idx) => {
-    const selectedOptIdx = state.userAnswers[idx];
-    const selectedText = selectedOptIdx !== undefined ? q.options[selectedOptIdx] : 'Unanswered';
-    const isCorrect = selectedOptIdx === q.correct ? '✅' : '❌';
-    return `Q${idx+1}: ${selectedText} (${isCorrect})`;
+    if (q.type === 'subjective') {
+      const userText = (state.userAnswers[idx] || '').trim();
+      const preview = userText ? (userText.length > 60 ? userText.substring(0, 60) + '...' : userText) : 'Unanswered';
+      return `Q${idx+1} [Written]: ${preview}`;
+    } else {
+      const selectedOptIdx = state.userAnswers[idx];
+      const selectedText = (selectedOptIdx !== undefined && q.options) ? q.options[selectedOptIdx] : 'Unanswered';
+      const isCorrect = selectedOptIdx === q.correct ? '✅' : '❌';
+      return `Q${idx+1}: ${selectedText} (${isCorrect})`;
+    }
   });
 
   // Construct Data Payload
@@ -2721,7 +2829,7 @@ async function processFinalSubmission(payload, reason) {
   if (reason === 'AUTO_SUBMIT_MAX_WARNINGS') {
     document.getElementById('res-status-badge').className = 'status-badge btn-danger';
     document.getElementById('result-title').innerText = '🚨 EXAM TERMINATED DUE TO CHEATING';
-    document.getElementById('result-sub').innerText = '5 Red Flag Warnings reached. Answers were auto-submitted & locked.';
+    document.getElementById('result-sub').innerText = `${CONFIG.maxWarnings} Red Flag Warnings reached. Answers were auto-submitted & locked.`;
   }
 
   // Update Escape / Away Time & Evidence Count

@@ -1,107 +1,134 @@
 [
   {
     "id": 1,
-    "question": "Engineers' Day in India is celebrated on 15th September to honour which legendary engineer?",
-    "options": ["A.P.J. Abdul Kalam", "M. Visvesvaraya", "Homi J. Bhabha", "C.V. Raman"],
+    "type": "mcq",
+    "question": "Cyber Squad ke anusar suspicious email investigation fragmented aur slow kyu ho jati hai?",
+    "options": [
+      "Kyunki internet speed hamesha low hoti hai",
+      "Kyunki analyst ko multiple signals ko alag-alag tools mein check karna padta hai",
+      "Kyunki koi bhi analyst email open nahi kar sakta",
+      "Kyunki emails mein koi technical data nahi hota"
+    ],
     "correct": 1,
     "points": 1
   },
   {
     "id": 2,
-    "question": "Which Indian space mission made history by successfully landing near the Moon's South Pole in 2023?",
-    "options": ["Mangalyaan", "Chandrayaan-2", "Chandrayaan-3", "Aditya-L1"],
+    "type": "mcq",
+    "question": "Cyber Squad platform ka primary focus kya hai?",
+    "options": [
+      "Sirf ek simple 'safe ya unsafe' label de dena",
+      "Human analyst ko fully replace kar dena",
+      "Evidence aur context combine karke explainable risk information dena",
+      "System ke saare emails ko automatically delete kar dena"
+    ],
     "correct": 2,
     "points": 1
   },
   {
     "id": 3,
-    "question": "Who is widely recognized as the 'Father of Modern Computer Science and Artificial Intelligence'?",
-    "options": ["Charles Babbage", "Alan Turing", "John von Neumann", "Ada Lovelace"],
+    "type": "mcq",
+    "question": "EML analysis module mein sender-domain trust verify karne ke liye kaun se technical checks inspect kiye jaate hain?",
+    "options": [
+      "HTML, CSS aur JavaScript",
+      "SPF, DKIM aur DMARC",
+      "TCP, UDP aur ICMP",
+      "PNG, JPEG aur GIF"
+    ],
     "correct": 1,
     "points": 1
   },
   {
     "id": 4,
-    "question": "What does the abbreviation 'LED' stand for in electronics?",
-    "options": ["Light Emitting Diode", "Low Energy Display", "Light Energy Device", "Liquid Emitting Diode"],
-    "correct": 0,
-    "points": 1
-  },
-  {
-    "id": 5,
-    "question": "In robotics and mechatronics, what device converts electrical energy directly into mechanical motion?",
-    "options": ["Sensor", "Actuator", "Rectifier", "Capacitor"],
+    "type": "mcq",
+    "question": "Text Analysis module mein agar koi single word jaise 'urgent' milta hai, toh Cyber Squad ka kya approach hota hai?",
+    "options": [
+      "Woh word akele automatically fraud prove kar deta hai",
+      "Model pooray context ko dekh kar explainable risk indicators present karta hai",
+      "System uss message ko turant delete kar deta hai",
+      "AI output ko bina kisi human review ke final proof maan liya jata hai"
+    ],
     "correct": 1,
     "points": 1
   },
   {
+    "id": 5,
+    "type": "mcq",
+    "question": "Attachment Analysis module mein file ka 'Hash' kyu especially important mana gaya hai?",
+    "options": [
+      "Kyunki yeh file ka digital fingerprint deta hai jisse future investigation mein consistency check hoti hai",
+      "Kyunki yeh file ke visual design ko sundar banata hai",
+      "Kyunki yeh file ki size ko zero kar deta hai",
+      "Kyunki hash file ko password se encrypt kar deta hai"
+    ],
+    "correct": 0,
+    "points": 1
+  },
+  {
     "id": 6,
-    "question": "What does 'WiFi' technically stand for?",
-    "options": ["Wireless Filing", "Wide Frequency Internet", "Wireless Fidelity", "Wire-Free Internet"],
-    "correct": 2,
+    "type": "mcq",
+    "question": "Safe URL Detonator module ka main security principle kya bataya gaya hai?",
+    "options": [
+      "URL analysis ka result absolute 100% guarantee hota hai",
+      "URL analysis ek security signal hai, absolute guarantee nahi; suspicious milne par additional verification zaroori hai",
+      "Live malicious URL ko direct browser mein open karke check karna chahiye",
+      "Sabhi external URLs automatically safe hote hain"
+    ],
+    "correct": 1,
     "points": 1
   },
   {
     "id": 7,
-    "question": "In computer architecture, exactly how many bits constitute one single Byte?",
-    "options": ["4 bits", "8 bits", "16 bits", "32 bits"],
+    "type": "mcq",
+    "question": "Cyber Squad ke 4 core analysis modules ka sahi sequence kaun sa hai?",
+    "options": [
+      "Antivirus, Firewall, VPN, Proxy",
+      "EML Analysis, Text Analysis, Attachment Analysis, Safe URL Detonator",
+      "Login, Signup, Forgot Password, Reset",
+      "Audio Analysis, Video Analysis, Image Analysis, Network Analysis"
+    ],
     "correct": 1,
     "points": 1
   },
   {
     "id": 8,
-    "question": "Which revolutionary neural network architecture introduced by Google in 2017 powers modern Large Language Models (LLMs)?",
-    "options": ["Recurrent Neural Network (RNN)", "Convolutional Neural Network (CNN)", "Transformer", "Support Vector Machine (SVM)"],
-    "correct": 2,
+    "type": "mcq",
+    "question": "Presentation rules ke anusar video demonstration mein malicious files aur customer data ke baare mein kya guideline di gayi hai?",
+    "options": [
+      "Real customer email aur actual live malicious file use karo",
+      "Kewal synthetic demo data use karo; actual malicious file aur real personal data kabhi use na karo",
+      "Koi bhi synthetic data use karna mana hai",
+      "Live credential data screen par clearly show karo"
+    ],
+    "correct": 1,
     "points": 1
   },
   {
     "id": 9,
-    "question": "What does 'UPS' stand for in power systems and computing?",
-    "options": ["Universal Power Supply", "Uninterruptible Power Supply", "Unified Protection System", "Unlimited Power Source"],
-    "correct": 1,
+    "type": "subjective",
+    "question": "Cyber Squad platform ka main problem statement kya hai aur yeh traditional fragmented tools ke mukable analyst ki investigation ko kaise behtar banata hai? (Apne shabdon mein likhiye)",
+    "keywords": ["fragmented", "signals", "tools", "unified", "evidence", "explainable", "context", "faster", "informed"],
     "points": 1
   },
   {
     "id": 10,
-    "question": "Which carbon allotrope, consisting of a single layer of atoms, is called the 'wonder material' for its extreme strength and conductivity?",
-    "options": ["Carbon Fibre", "Graphene", "Diamond", "Fullerene"],
-    "correct": 1,
+    "type": "subjective",
+    "question": "EML Analysis module email file ko parse karke kaun-kaun se important technical components separate karta hai aur SPF/DKIM/DMARC ka kya role hai? (Vistrit roop mein likhiye)",
+    "keywords": ["sender", "receiver", "subject", "body", "headers", "links", "attachments", "spf", "dkim", "dmarc", "trust", "domain", "authentication"],
     "points": 1
   },
   {
     "id": 11,
-    "question": "Which mathematical number system using only digits 0 and 1 forms the foundational logic for all digital electronic computers?",
-    "options": ["Octal", "Hexadecimal", "Binary", "Decimal"],
-    "correct": 2,
+    "type": "subjective",
+    "question": "Attachment Analysis mein file-level evidence (jaise metadata aur digital fingerprint hash) inspect karna kyu zaroori hai? (Apna uttar likhiye)",
+    "keywords": ["attachment", "hash", "digital fingerprint", "metadata", "file type", "risk", "consistency", "investigation"],
     "points": 1
   },
   {
     "id": 12,
-    "question": "In cybersecurity, which security mechanism requires two different authentication factors before granting account access?",
-    "options": ["Single Sign-On (SSO)", "Two-Factor Authentication (2FA)", "Captcha Verification", "End-to-End Encryption"],
-    "correct": 1,
-    "points": 1
-  },
-  {
-    "id": 13,
-    "question": "Which rechargeable battery technology is the primary power source for modern Electric Vehicles (EVs) and smartphones?",
-    "options": ["Lead-Acid Battery", "Nickel-Cadmium Battery", "Lithium-Ion Battery", "Zinc-Carbon Battery"],
-    "correct": 2,
-    "points": 1
-  },
-  {
-    "id": 14,
-    "question": "In cloud computing, which model provides virtualized computing resources (servers, storage, networking) over the internet on-demand?",
-    "options": ["Infrastructure as a Service (IaaS)", "Platform as a Service (PaaS)", "Software as a Service (SaaS)", "Function as a Service (FaaS)"],
-    "correct": 0,
-    "points": 1
-  },
-  {
-    "id": 15,
-    "question": "In quantum computing, what is the basic unit of quantum information that can exist in superposition as both 0 and 1 simultaneously?",
-    "options": ["Qubit", "Quantum Byte", "Posit", "Superbit"],
-    "correct": 0,
+    "type": "subjective",
+    "question": "Safe URL Detonator module phishing links ko kaise analyze karta hai aur iska result ek 'security signal' kyu hai na ki 'absolute guarantee'? (Samjha kar likhiye)",
+    "keywords": ["url", "phishing", "fake login", "credential theft", "signal", "guarantee", "verification", "context", "controlled"],
     "points": 1
   }
 ]
